@@ -56,9 +56,7 @@ impl Block for BlockType {
     fn get_friction(&self) -> BlockTypeResult<f32> {
         match self {
             WoodPlank | WoodBlock => Ok(1.0),
-
             IcePlank | IceBlock => Ok(0.5),
-
             SlimeBlock | SlimePlank => Ok(1.0),
 
             Total => Err(InvalidBlockTypeError)
