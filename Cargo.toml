@@ -3,9 +3,11 @@ name = "micromayhem"
 version = "0.0.1"
 authors = ["Derick Tseng (derickwtseng@gmail.com)"]
 description = """
-micromayhem is a shooting game inspired by the flash game *Gun Mayhem*.
+MicroMayhem is a shooting game inspired by the flash game *Gun Mayhem*.
 Gun down your opponents from the platform, and avoid getting shot down yourself.
 """
+homepage = "https://github.com/MetriC-DT/micromayhem"
+repository = "https://github.com/MetriC-DT/micromayhem"
 
 [workspace]
 members = [
@@ -14,3 +16,7 @@ members = [
     "crates/network",
     "crates/launcher"
 ]
+
+[[bin]]
+name = "micromayhem"
+path = "crates/launcher/src/main.rs"
