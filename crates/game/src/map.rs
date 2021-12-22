@@ -35,9 +35,13 @@ impl Map {
 
         let data = [woodblocks, woodplanks, iceblocks, iceplanks, slimeblocks, slimeplanks];
 
-        // strip all blocks that are empty
-        let nozeroes = data.iter().filter(|&x| *x != 0);
-        let overlaps = nozeroes.into_iter().fold(u128::MAX, |acc, x| {acc & x});
+        let overlaps = data.into_iter().fold(u128::MAX, |acc, x| {
+            if x == 0 {
+                acc
+            } else {
+                acc & x
+            }
+        });
         
         if overlaps == 0 {
             Ok(Map {

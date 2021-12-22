@@ -3,6 +3,8 @@ mod block;
 
 #[cfg(test)]
 mod tests {
+    use crate::map;
+
 
     #[test]
     fn allow_basic_map() {
