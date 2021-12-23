@@ -1,4 +1,4 @@
-use crate::map::{self, Map, AllBlocks};
+use crate::map::{self, Map, MapBits};
 
 #[derive(Debug)]
 pub struct Arena {
@@ -8,12 +8,24 @@ pub struct Arena {
 }
 
 impl Arena {
-    pub fn new() -> Arena {
-        let allblocks: AllBlocks = [0, 0, 0, 0, 0, 0].into();
+    pub fn new(map: Map,
+               padding_width: usize,
+               padding_height: usize) -> Result<Arena, &'static str> {
+        Ok(Arena {
+            map,
+            padding_width,
+            padding_height
+        })
+    }
 
-        match Map::from_bits(allblocks) {
-            Ok(map) => Arena { map, padding_width: 3, padding_height: 3 },
-            Err(e) => panic!("{}", e),
-        }
+    pub fn default() -> Result<Arena, &'static str> {
+        let mapbits: MapBits = [0, 0, 0, 0, 0, 0].into();
+        let map: Map = Map::from_bits(mapbits)?;
+        Arena::new(map, 3, 3)
+    }
+
+    pub fn from_file(filename: &str) -> Result<Arena, &'static str> {
+        let map = Map::from_file(filename)?;
+        Arena::new(map, 3, 3)
     }
 }

@@ -3,17 +3,14 @@ use crate::block;
 
 /// Type alias to represent all positions occupied by the 8x16
 /// grid of blocks of all types. Used internally.
-type AllBlocksList = [u128; block::BLOCK_TYPES_COUNT];
+type MapBitsList = [u128; block::BLOCK_TYPES_COUNT];
 
-/// Type alias for result that returns a map struct
-type MapResult = Result<Map, InvalidMapError>;
-
-/// Container for the type alias BlocksList
+/// Bits used to construct a map.
 #[derive(Debug)]
-pub struct AllBlocks(AllBlocksList);
-impl From<AllBlocksList> for AllBlocks {
-    fn from(lst: AllBlocksList) -> Self {
-        AllBlocks(lst)
+pub struct MapBits(MapBitsList);
+impl From<MapBitsList> for MapBits {
+    fn from(lst: MapBitsList) -> Self {
+        MapBits(lst)
     }
 }
 
@@ -21,21 +18,7 @@ impl From<AllBlocksList> for AllBlocks {
 /// represents the data obtained for a block of certain type on a Map
 pub type BlocksResult = Result<u128, block::InvalidBlockTypeError>;
 
-
-/// Error when map is unable to be constructed.
-#[derive(Debug)]
-pub struct InvalidMapError;
-impl fmt::Display for InvalidMapError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Map is invalid")
-    }
-}
-
-/// bitmask for getting an entire row.
-const ROWMASK: u128 = 1334440654591915542993625911497130241;
-
-/// bitmask for getting an entire column.
-const COLMASK: u128 = 0b11111111;
+const INVALID_MAP: &str = "Invalid Map";
 
 /// width of a map in blocks
 const MAP_WIDTH: usize = 16;
@@ -43,6 +26,11 @@ const MAP_WIDTH: usize = 16;
 /// height of a map in blocks
 const MAP_HEIGHT: usize = 8;
 
+/// bitmask for getting an entire row.
+const ROWMASK: u128 = 1334440654591915542993625911497130241;
+
+/// bitmask for getting an entire column.
+const COLMASK: u128 = 1 << MAP_HEIGHT - 1;
 
 /// Represents a map object, which contains the locations
 /// of all the types of blocks.
@@ -59,7 +47,7 @@ pub struct Map {
     /// The types of blocks are batched into one array for convenience.
     /// In order to access the information for a specific block type,
     /// call the `get_blocks_of_type(BlockType)` method.
-    allblocks: AllBlocks
+    mapbits: MapBits
 }
 
 impl fmt::Display for Map {
@@ -70,11 +58,11 @@ impl fmt::Display for Map {
 }
 
 impl Map {
-    /// Constructs a new Map from an allblocks array.
+    /// Constructs a new Map from map bits (array).
     ///
     /// Returns Error if map has overlapping blocks.
-    pub fn from_bits(allblocks: AllBlocks) -> MapResult {
-        let AllBlocks(blocks) = allblocks;
+    pub fn from_bits(mapbits: MapBits) -> Result<Map, &'static str> {
+        let MapBits(blocks) = mapbits;
 
         let nonzerocount = blocks.into_iter().filter(|&x| x != 0).count();
         if nonzerocount > 1 {
@@ -87,27 +75,27 @@ impl Map {
             });
         
             if overlaps == 0 {
-                Ok(Map {allblocks})
+                Ok(Map {mapbits})
             }
             else {
-                Err(InvalidMapError)
+                Err(INVALID_MAP)
             }
         } else {
-            Ok(Map {allblocks})
+            Ok(Map {mapbits})
         }
     }
 
     /// Constructs a new map from data saved in a file.
-    pub fn from_file(filename: &str) -> MapResult {
+    pub fn from_file(filename: &str) -> Result<Map, &'static str> {
         todo!();
     }
 
     /// obtains the locations that are occupied by blocks of specified type
     pub fn get_blocks_of_type(&self, blocktype: block::BlockType) -> BlocksResult {
         let blockindex = blocktype as usize;
-        let AllBlocks(allblocks) = self.allblocks;
+        let MapBits(mapbits) = self.mapbits;
         let result = if blockindex < block::BLOCK_TYPES_COUNT {
-            Ok(allblocks[blockindex])
+            Ok(mapbits[blockindex])
         }
         else {
             Err(block::InvalidBlockTypeError)
@@ -118,8 +106,8 @@ impl Map {
 
     /// Obtains the locations that are occupied by blocks of any type.
     pub fn get_all_occupied(&self) -> BlocksResult {
-        let AllBlocks(allblocks) = self.allblocks;
-        let x = allblocks.iter().fold(0, |acc, x| {acc | x});
+        let MapBits(mapbits) = self.mapbits;
+        let x = mapbits.iter().fold(0, |acc, x| {acc | x});
         Ok(x)
     }
 
