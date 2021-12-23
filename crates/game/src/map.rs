@@ -65,12 +65,13 @@ impl fmt::Display for Map {
     }
 }
 
+/// Gets the string representation of a BlocksResult
 pub fn blocks_result_string(b: &BlocksResult) -> String {
     let mut string_rep = String::new();
     for i in 0..MAP_HEIGHT {
         let mask: u128 = ROWMASK << i;
         let row = (b.as_ref().unwrap() & mask) >> i;
-        for j in (0..MAP_WIDTH).step_by(MAP_HEIGHT) {
+        for j in (0..MAP_WIDTH * MAP_HEIGHT).step_by(MAP_HEIGHT) {
             if (1 << j) & row != 0 {
                 string_rep += "_";
             }
