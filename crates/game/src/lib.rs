@@ -1,6 +1,7 @@
-mod map;
-mod block;
-mod arena;
+pub mod map;
+pub mod block;
+pub mod arena;
+pub mod player;
 
 #[cfg(test)]
 mod test_map;

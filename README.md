@@ -9,4 +9,4 @@ Gun down your opponents from the platform, and avoid getting shot down yourself.
 - `src` - main entry point of the program
 - `crates/game` - Game components and logic
 - `crates/gui` - GUI elements, sprite loader
-- `crates/network` - Netcode for both clients and server
+- `crates/network` - Netcode for client and server

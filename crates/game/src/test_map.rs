@@ -27,6 +27,14 @@ fn allow_basic_map_2_init() {
 }
 
 #[test]
+fn allow_basic_map_3_init() {
+    let data = [0, 0, 0, 0, 0, 1].into();
+
+    let result = map::Map::from_bits(data);
+    assert!(result.is_ok());
+}
+
+#[test]
 fn forbid_basic_map_init() {
     let woodblocks: u128 = 0b0101;
     let woodplanks: u128 = 0b1110;
@@ -34,13 +42,6 @@ fn forbid_basic_map_init() {
     let data = [woodblocks, woodplanks, 0, 0, 0, 0].into();
     let result = map::Map::from_bits(data);
 
-    assert!(result.is_err());
-}
-
-#[test]
-fn disallow_empty_map_init() {
-    let data = [0, 0, 0, 0, 0, 0].into();
-    let result = map::Map::from_bits(data);
     assert!(result.is_err());
 }
 

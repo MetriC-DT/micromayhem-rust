@@ -2,6 +2,7 @@ use ggez::conf::Conf;
 use ggez::ContextBuilder;
 use ggez::conf::WindowMode;
 use ggez::conf::WindowSetup;
+use crate::*;
 
 pub fn load_configuration(cb: ContextBuilder) -> ContextBuilder {
     // tries to read any user configuration, if it exists.
@@ -23,10 +24,10 @@ pub fn load_configuration(cb: ContextBuilder) -> ContextBuilder {
     };
 
     let default_window_setup = WindowSetup {
-        title: crate::GAME_TITLE.to_owned(),
+        title: GAME_TITLE.to_owned(),
         samples: ggez::conf::NumSamples::One,
         vsync: true,
-        icon: crate::ICON_PATH.to_owned(),
+        icon: ICON_PATH.to_owned(),
         srgb: true,
     };
 
