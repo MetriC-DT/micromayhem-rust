@@ -1,6 +1,7 @@
 [package]
 name = "micromayhem"
 version = "0.0.1"
+edition = "2021"
 authors = ["Derick Tseng (derickwtseng@gmail.com)"]
 description = """
 MicroMayhem is a shooting game inspired by the flash game *Gun Mayhem*.
@@ -14,9 +15,14 @@ members = [
     "crates/gui",
     "crates/game",
     "crates/network",
-    "crates/launcher"
 ]
+
+[dependencies]
+ggez = "0.7"
+game = { path = "crates/game" }
+gui = { path = "crates/gui" }
+network = { path = "crates/network" }
 
 [[bin]]
 name = "micromayhem"
-path = "crates/launcher/src/main.rs"
+path = "src/main.rs"
