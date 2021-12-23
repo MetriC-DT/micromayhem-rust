@@ -23,6 +23,7 @@ pub type BlocksResult = Result<u128, block::InvalidBlockTypeError>;
 
 
 /// Error when map is unable to be constructed.
+#[derive(Debug)]
 pub struct InvalidMapError;
 impl fmt::Display for InvalidMapError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -32,6 +33,9 @@ impl fmt::Display for InvalidMapError {
 
 /// bitmask for getting an entire row.
 const ROWMASK: u128 = 1334440654591915542993625911497130241;
+
+/// bitmask for getting an entire column.
+const COLMASK: u128 = 0b11111111;
 
 /// width of a map in blocks
 const MAP_WIDTH: usize = 16;
@@ -61,28 +65,8 @@ pub struct Map {
 impl fmt::Display for Map {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let occupied = self.get_all_occupied();
-        write!(f, "{}", blocks_result_string(&occupied))
+        write!(f, "{}", Map::blocks_result_string(&occupied))
     }
-}
-
-/// Gets the string representation of a BlocksResult
-pub fn blocks_result_string(b: &BlocksResult) -> String {
-    let mut string_rep = String::new();
-    for i in 0..MAP_HEIGHT {
-        let mask: u128 = ROWMASK << i;
-        let row = (b.as_ref().unwrap() & mask) >> i;
-        for j in (0..MAP_WIDTH * MAP_HEIGHT).step_by(MAP_HEIGHT) {
-            if (1 << j) & row != 0 {
-                string_rep += "_";
-            }
-            else {
-                string_rep += " ";
-            }
-        }
-        string_rep += "\n";
-    }
-
-    return string_rep;
 }
 
 impl Map {
@@ -137,5 +121,26 @@ impl Map {
         let AllBlocks(allblocks) = self.allblocks;
         let x = allblocks.iter().fold(0, |acc, x| {acc | x});
         Ok(x)
+    }
+
+    /// Gets the string representation of a BlocksResult
+    fn blocks_result_string(b: &BlocksResult) -> String {
+        let mut string_rep = String::new();
+        for i in 0..MAP_HEIGHT {
+            let mask: u128 = ROWMASK << i;
+            let row = (b.as_ref().unwrap() & mask) >> i;
+
+            for j in 0..MAP_WIDTH {
+                let mask2: u128 = 1 << (j * MAP_HEIGHT);
+                if row & mask2 != 0 {
+                    string_rep += "1";
+                } else {
+                    string_rep += "0";
+                }
+            }
+            string_rep += "\n";
+        }
+
+        string_rep
     }
 }

@@ -3,7 +3,7 @@ mod configuration;
 
 use ggez::{GameResult, ContextBuilder, event};
 use gamestate::GameState;
-use game::{self, arena::Arena, map::Map};
+use game::arena::Arena;
 use micromayhem::*;
 
 fn main() -> GameResult {
