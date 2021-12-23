@@ -1,5 +1,5 @@
 use crate::weapon::Weapon;
-use glam::f32::Vec2;
+use glam::Vec2;
 
 pub struct Player {
     position: Vec2,

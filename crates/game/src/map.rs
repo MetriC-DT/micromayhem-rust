@@ -1,5 +1,6 @@
 use core::fmt;
 use crate::block;
+use glam::Vec2;
 
 /// Type alias to represent all positions occupied by the 8x16
 /// grid of blocks of all types. Used internally.
@@ -14,10 +15,12 @@ impl From<MapBitsList> for MapBits {
     }
 }
 
-
 /// represents the data obtained for a block of certain type on a Map
 pub type BlocksResult = Result<u128, block::InvalidBlockTypeError>;
 
+/// Error message for invalid map.
+///
+/// TODO: refactor into actual enum of different errors.
 const INVALID_MAP: &str = "Invalid Map";
 
 /// width of a map in blocks
@@ -32,8 +35,13 @@ const ROWMASK: u128 = 1334440654591915542993625911497130241;
 /// bitmask for getting an entire column.
 const COLMASK: u128 = 1 << MAP_HEIGHT - 1;
 
+pub static GRAVITY_DEFAULT: [f32; 2] = [0.0, -10.0];
+pub const PADDING_WIDTH_DEFAULT: usize = 3;
+pub const PADDING_HEIGHT_DEFAULT: usize = 3;
+
 /// Represents a map object, which contains the locations
-/// of all the types of blocks.
+/// of all the types of blocks, as well as the surrounding padding
+/// and gravity.
 ///
 /// A Map is represented by the locations of all the blocks, 
 /// in an 8x16 array. The surrounding padding is part of the arena.
@@ -47,26 +55,38 @@ pub struct Map {
     /// The types of blocks are batched into one array for convenience.
     /// In order to access the information for a specific block type,
     /// call the `get_blocks_of_type(BlockType)` method.
-    mapbits: MapBits
+    mapbits: MapBits,
+    padding_width: usize,
+    padding_height: usize,
+    gravity: Vec2,
 }
 
 impl fmt::Display for Map {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let occupied = self.get_all_occupied();
-        write!(f, "{}", Map::blocks_result_string(&occupied))
+        write!(f, "{}\nPadding_Width={}\nPadding_Height={}\nGravity={}",
+               Map::blocks_result_string(&occupied),
+               self.padding_width,
+               self.padding_height,
+               self.gravity)
     }
 }
 
 impl Map {
-    /// Constructs a new Map from map bits (array).
-    ///
-    /// Returns Error if map has overlapping blocks.
-    pub fn from_bits(mapbits: MapBits) -> Result<Map, &'static str> {
-        let MapBits(blocks) = mapbits;
+    /// Constructs a new map
+    pub fn new(mapbits: MapBits, padding_width: usize, padding_height: usize, gravity: Vec2) -> Result<Map, &'static str> {
+        let mapbits = Map::verify_mapbits(mapbits)?;
+        Ok(Map { mapbits, padding_width, padding_height, gravity })
+    }
 
-        let nonzerocount = blocks.into_iter().filter(|&x| x != 0).count();
+    /// verifies if mapbits can form a legal map.
+    ///
+    /// A legal map is defined as a map with no overlapping blocks.
+    fn verify_mapbits(mapbits: MapBits) -> Result<MapBits, &'static str> {
+        let MapBits(bits) = mapbits;
+        let nonzerocount = bits.into_iter().filter(|&x| x != 0).count();
         if nonzerocount > 1 {
-            let overlaps = blocks.into_iter().fold(u128::MAX, |acc, x| {
+            let overlaps = bits.into_iter().fold(u128::MAX, |acc, x| {
                 if x == 0 {
                     acc
                 } else {
@@ -75,13 +95,13 @@ impl Map {
             });
         
             if overlaps == 0 {
-                Ok(Map {mapbits})
+                Ok(MapBits(bits))
             }
             else {
                 Err(INVALID_MAP)
             }
         } else {
-            Ok(Map {mapbits})
+            Ok(MapBits(bits))
         }
     }
 
@@ -131,4 +151,12 @@ impl Map {
 
         string_rep
     }
+}
+
+#[test]
+fn map_string_representation() {
+    let data = [1<<127, 1<<126, 1<<105, 1<<2, 1<<80, 1<<8].into();
+    let result = Map::new(data, PADDING_WIDTH_DEFAULT, PADDING_HEIGHT_DEFAULT, GRAVITY_DEFAULT.into()).unwrap();
+    let stringrep = "0100000000100000\n0000000000000100\n1000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000001\n0000000000000001\n";
+    assert_eq!(stringrep, Map::blocks_result_string(&result.get_all_occupied()));
 }
