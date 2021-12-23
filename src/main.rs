@@ -8,9 +8,6 @@ use micromayhem::*;
 
 fn main() -> GameResult {
     let mut g = GameState::new(Arena::new());
-    let a = &g.arena;
-    let b = &a.map;
-    println!("{}", b);
 
     let mut cb = ContextBuilder::new(GAME_TITLE, AUTHOR);
     cb = configuration::load_configuration(cb);

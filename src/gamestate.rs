@@ -5,7 +5,7 @@ use crate::utils;
 
 #[derive(Debug)]
 pub struct GameState {
-    pub arena: Arena,
+    arena: Arena,
 }
 
 impl GameState {
