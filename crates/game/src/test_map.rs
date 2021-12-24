@@ -74,3 +74,9 @@ fn test_serialize_deserialize_map() {
 
     assert_eq!(map_from_file.to_string(), result.to_string());
 }
+
+#[test]
+fn test_deserialize_fail() {
+    let f = "nonexistant_file";
+    assert!(Map::read_from_file(f).is_err());
+}
