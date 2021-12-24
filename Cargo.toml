@@ -19,6 +19,9 @@ members = [
 
 [dependencies]
 ggez = "0.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+glam = "0.20.2"
 game = { path = "crates/game" }
 gui = { path = "crates/gui" }
 network = { path = "crates/network" }

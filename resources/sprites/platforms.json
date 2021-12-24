@@ -1,76 +1,156 @@
 {"frames": [
 
 {
-	"filename": "grass1.png",
-	"frame": {"x":0,"y":38,"w":126,"h":70},
+	"filename": "grassblockleft.png",
+	"frame": {"x":1,"y":1,"w":31,"h":70},
 	"rotated": false,
 	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":70},
-	"sourceSize": {"w":126,"h":70}
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":70},
+	"sourceSize": {"w":31,"h":70}
 },
 {
-	"filename": "grass2.png",
-	"frame": {"x":0,"y":0,"w":126,"h":38},
+	"filename": "grassblockmid.png",
+	"frame": {"x":34,"y":1,"w":32,"h":70},
 	"rotated": false,
 	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":38},
-	"sourceSize": {"w":126,"h":38}
+	"spriteSourceSize": {"x":0,"y":0,"w":32,"h":70},
+	"sourceSize": {"w":32,"h":70}
 },
 {
-	"filename": "ice1.png",
-	"frame": {"x":126,"y":38,"w":126,"h":70},
+	"filename": "grassblockright.png",
+	"frame": {"x":68,"y":1,"w":31,"h":70},
 	"rotated": false,
 	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":70},
-	"sourceSize": {"w":126,"h":70}
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":70},
+	"sourceSize": {"w":31,"h":70}
 },
 {
-	"filename": "ice2.png",
-	"frame": {"x":126,"y":0,"w":126,"h":38},
+	"filename": "grassplankleft.png",
+	"frame": {"x":1,"y":73,"w":31,"h":38},
 	"rotated": false,
 	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":38},
-	"sourceSize": {"w":126,"h":38}
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":38},
+	"sourceSize": {"w":31,"h":38}
 },
 {
-	"filename": "mud1.png",
-	"frame": {"x":252,"y":38,"w":126,"h":70},
+	"filename": "grassplankmid.png",
+	"frame": {"x":34,"y":73,"w":32,"h":38},
 	"rotated": false,
 	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":70},
-	"sourceSize": {"w":126,"h":70}
+	"spriteSourceSize": {"x":0,"y":0,"w":32,"h":38},
+	"sourceSize": {"w":32,"h":38}
 },
 {
-	"filename": "mud2.png",
-	"frame": {"x":252,"y":0,"w":126,"h":38},
+	"filename": "grassplankright.png",
+	"frame": {"x":68,"y":73,"w":31,"h":38},
 	"rotated": false,
 	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":38},
-	"sourceSize": {"w":126,"h":38}
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":38},
+	"sourceSize": {"w":31,"h":38}
 },
 {
-	"filename": "snow1.png",
-	"frame": {"x":378,"y":38,"w":126,"h":70},
+	"filename": "iceblockleft.png",
+	"frame": {"x":1,"y":113,"w":31,"h":70},
 	"rotated": false,
 	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":70},
-	"sourceSize": {"w":126,"h":70}
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":70},
+	"sourceSize": {"w":31,"h":70}
 },
 {
-	"filename": "snow2.png",
-	"frame": {"x":378,"y":0,"w":126,"h":38},
+	"filename": "iceblockmid.png",
+	"frame": {"x":34,"y":113,"w":32,"h":70},
 	"rotated": false,
 	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":38},
-	"sourceSize": {"w":126,"h":38}
+	"spriteSourceSize": {"x":0,"y":0,"w":32,"h":70},
+	"sourceSize": {"w":32,"h":70}
+},
+{
+	"filename": "iceblockright.png",
+	"frame": {"x":68,"y":113,"w":31,"h":70},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":70},
+	"sourceSize": {"w":31,"h":70}
+},
+{
+	"filename": "iceplankleft.png",
+	"frame": {"x":1,"y":185,"w":31,"h":38},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":38},
+	"sourceSize": {"w":31,"h":38}
+},
+{
+	"filename": "iceplankmid.png",
+	"frame": {"x":34,"y":185,"w":32,"h":38},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":32,"h":38},
+	"sourceSize": {"w":32,"h":38}
+},
+{
+	"filename": "iceplankright.png",
+	"frame": {"x":68,"y":185,"w":31,"h":38},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":38},
+	"sourceSize": {"w":31,"h":38}
+},
+{
+	"filename": "mudblockleft.png",
+	"frame": {"x":1,"y":225,"w":31,"h":70},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":70},
+	"sourceSize": {"w":31,"h":70}
+},
+{
+	"filename": "mudblockmid.png",
+	"frame": {"x":34,"y":225,"w":32,"h":70},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":32,"h":70},
+	"sourceSize": {"w":32,"h":70}
+},
+{
+	"filename": "mudblockright.png",
+	"frame": {"x":68,"y":225,"w":31,"h":70},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":70},
+	"sourceSize": {"w":31,"h":70}
+},
+{
+	"filename": "mudplankleft.png",
+	"frame": {"x":1,"y":297,"w":31,"h":38},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":38},
+	"sourceSize": {"w":31,"h":38}
+},
+{
+	"filename": "mudplankmid.png",
+	"frame": {"x":34,"y":297,"w":32,"h":38},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":32,"h":38},
+	"sourceSize": {"w":32,"h":38}
+},
+{
+	"filename": "mudplankright.png",
+	"frame": {"x":68,"y":297,"w":31,"h":38},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":31,"h":38},
+	"sourceSize": {"w":31,"h":38}
 }],
 "meta": {
 	"app": "https://www.codeandweb.com/texturepacker",
 	"version": "1.0",
 	"image": "platforms.png",
 	"format": "RGBA8888",
-	"size": {"w":504,"h":108},
+	"size": {"w":100,"h":336},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:8aabc08cc41d71aaf3bbf6a8f46281df:c85bb1fcfb446bc58f2f8963e4b2a6f3:ec9392705195bb6ee1aa4d72e9f3e713$"
+	"smartupdate": "$TexturePacker:SmartUpdate:ee83718c7a018299298e4092d9487c83:096f83a6aae1f74349583e4ff7b4aad5:ec9392705195bb6ee1aa4d72e9f3e713$"
 }
 }
