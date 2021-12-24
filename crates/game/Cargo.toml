@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 mint = "0.5.8"
 glam = "0.20.2"
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.2.1"

@@ -1,13 +1,20 @@
 use core::fmt;
+use std::fs::File;
+use std::io::BufReader;
+use std::io::BufWriter;
 use crate::block;
+use bincode::deserialize_from;
+use bincode::serialize_into;
+use glam::const_vec2;
 use glam::Vec2;
+use serde::{Serialize , Deserialize};
 
 /// Type alias to represent all positions occupied by the 8x16
 /// grid of blocks of all types. Used internally.
 type MapBitsList = [u128; block::BLOCK_TYPES_COUNT];
 
 /// Bits used to construct a map.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MapBits(MapBitsList);
 impl From<MapBitsList> for MapBits {
     fn from(lst: MapBitsList) -> Self {
@@ -35,9 +42,15 @@ const ROWMASK: u128 = 1334440654591915542993625911497130241;
 /// bitmask for getting an entire column.
 const COLMASK: u128 = 1 << MAP_HEIGHT - 1;
 
-pub static GRAVITY_DEFAULT: [f32; 2] = [0.0, -10.0];
-pub const PADDING_WIDTH_DEFAULT: usize = 3;
-pub const PADDING_HEIGHT_DEFAULT: usize = 3;
+pub const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, -10.0]);
+
+/// horizontal padding of map in number of blocks
+/// This is the region around where player is considered to be alive.
+pub const PADDING_WIDTH: usize = 3;
+
+/// vertical padding of map in number of blocks.
+/// This is the region around where player is considered to be alive.
+pub const PADDING_HEIGHT: usize = 3;
 
 /// Represents a map object, which contains the locations
 /// of all the types of blocks, as well as the surrounding padding
@@ -46,7 +59,7 @@ pub const PADDING_HEIGHT_DEFAULT: usize = 3;
 /// A Map is represented by the locations of all the blocks, 
 /// in an 8x16 array. The surrounding padding is part of the arena.
 /// Look at the arena module for more details.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Map {
     /// an array containing information about all the blocks. Each type
     /// of block is represented as a `u128` type, with 8 bits for each column
@@ -56,27 +69,52 @@ pub struct Map {
     /// In order to access the information for a specific block type,
     /// call the `get_blocks_of_type(BlockType)` method.
     mapbits: MapBits,
-    padding_width: usize,
-    padding_height: usize,
-    gravity: Vec2,
+
+    /// gravity vector.
+    gravity: [f32; 2],
 }
 
 impl fmt::Display for Map {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let occupied = self.get_all_occupied();
-        write!(f, "{}\nPadding_Width={}\nPadding_Height={}\nGravity={}",
+        write!(f, "{}\nGravity={:?}",
                Map::blocks_result_string(&occupied),
-               self.padding_width,
-               self.padding_height,
                self.gravity)
     }
 }
 
 impl Map {
     /// Constructs a new map
-    pub fn new(mapbits: MapBits, padding_width: usize, padding_height: usize, gravity: Vec2) -> Result<Map, &'static str> {
+    pub fn new(mapbits: MapBits, gravity: Vec2) -> Result<Map, String> {
         let mapbits = Map::verify_mapbits(mapbits)?;
-        Ok(Map { mapbits, padding_width, padding_height, gravity })
+        Ok(Map { mapbits, gravity: gravity.to_array() })
+    }
+
+    /// creates a default map. Used only for testing.
+    pub fn default(mapbits: MapBits) -> Result<Map, String> {
+        Map::new(mapbits, GRAVITY_DEFAULT)
+    }
+
+    /// Constructs a new map from data saved in a file.
+    pub fn read_from_file(filename: &str) -> Result<Map, String> {
+        match File::open(filename) {
+            Ok(f) => {
+                let reader = BufReader::new(f);
+                match deserialize_from::<_, Map>(reader) {
+                    Ok(map) => Ok(map),
+                    Err(e) => Err(e.to_string())
+                }
+            },
+            Err(e) => Err(e.to_string())
+        }
+    }
+
+    pub fn write_to_file(&self, filename: &str) -> Result<(), std::io::Error> {
+        let mut f = BufWriter::new(File::create(filename)?);
+        match serialize_into(&mut f, &self) {
+            Ok(_) => Ok(()),
+            Err(_) => todo!(),
+        }
     }
 
     /// verifies if mapbits can form a legal map.
@@ -105,9 +143,9 @@ impl Map {
         }
     }
 
-    /// Constructs a new map from data saved in a file.
-    pub fn from_file(filename: &str) -> Result<Map, &'static str> {
-        todo!();
+    /// obtains the gravity associated with the map.
+    pub fn get_gravity(&self) -> Vec2 {
+        self.gravity.into()
     }
 
     /// obtains the locations that are occupied by blocks of specified type
@@ -156,7 +194,7 @@ impl Map {
 #[test]
 fn map_string_representation() {
     let data = [1<<127, 1<<126, 1<<105, 1<<2, 1<<80, 1<<8].into();
-    let result = Map::new(data, PADDING_WIDTH_DEFAULT, PADDING_HEIGHT_DEFAULT, GRAVITY_DEFAULT.into()).unwrap();
-    let stringrep = "0100000000100000\n0000000000000100\n1000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000001\n0000000000000001\n";
-    assert_eq!(stringrep, Map::blocks_result_string(&result.get_all_occupied()));
+    let result = Map::new(data, GRAVITY_DEFAULT).unwrap();
+    let string_rep = "0100000000100000\n0000000000000100\n1000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000001\n0000000000000001\n";
+    assert_eq!(string_rep, Map::blocks_result_string(&result.get_all_occupied()));
 }

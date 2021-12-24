@@ -1,6 +1,8 @@
+use core::fmt::Debug;
+
 pub type Weapon = Box<dyn WeaponTrait>;
 
-pub trait WeaponTrait {
+pub trait WeaponTrait: Debug {
     fn attack(&self);
     fn throw(&self);
     fn get_owner(&self);
