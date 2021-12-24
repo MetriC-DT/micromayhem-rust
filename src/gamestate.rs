@@ -14,9 +14,18 @@ impl GameState {
     }
 }
 
+
+const DESIRED_FPS: u32 = 60;
+
 impl EventHandler for GameState {
     fn update(&mut self, ctx: &mut ggez::Context) -> GameResult {
-        let dt: f32 = timer::delta(ctx).as_secs_f32();
+        // Rely on ggez's built-in timer for deciding when to update the game, and how many times.
+        // If the update is early, there will be no cycles, otherwises, the logic will run once for each
+        // frame fitting in the time since the last update.
+        while timer::check_update_time(ctx, DESIRED_FPS) {
+            let seconds = 1.0 / (DESIRED_FPS as f32);
+        }
+
         Ok(())
     }
 

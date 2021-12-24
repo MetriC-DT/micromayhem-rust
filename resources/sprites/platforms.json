@@ -1,0 +1,76 @@
+{"frames": [
+
+{
+	"filename": "grass1.png",
+	"frame": {"x":0,"y":38,"w":126,"h":70},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":70},
+	"sourceSize": {"w":126,"h":70}
+},
+{
+	"filename": "grass2.png",
+	"frame": {"x":0,"y":0,"w":126,"h":38},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":38},
+	"sourceSize": {"w":126,"h":38}
+},
+{
+	"filename": "ice1.png",
+	"frame": {"x":126,"y":38,"w":126,"h":70},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":70},
+	"sourceSize": {"w":126,"h":70}
+},
+{
+	"filename": "ice2.png",
+	"frame": {"x":126,"y":0,"w":126,"h":38},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":38},
+	"sourceSize": {"w":126,"h":38}
+},
+{
+	"filename": "mud1.png",
+	"frame": {"x":252,"y":38,"w":126,"h":70},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":70},
+	"sourceSize": {"w":126,"h":70}
+},
+{
+	"filename": "mud2.png",
+	"frame": {"x":252,"y":0,"w":126,"h":38},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":38},
+	"sourceSize": {"w":126,"h":38}
+},
+{
+	"filename": "snow1.png",
+	"frame": {"x":378,"y":38,"w":126,"h":70},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":70},
+	"sourceSize": {"w":126,"h":70}
+},
+{
+	"filename": "snow2.png",
+	"frame": {"x":378,"y":0,"w":126,"h":38},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":126,"h":38},
+	"sourceSize": {"w":126,"h":38}
+}],
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "platforms.png",
+	"format": "RGBA8888",
+	"size": {"w":504,"h":108},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:8aabc08cc41d71aaf3bbf6a8f46281df:c85bb1fcfb446bc58f2f8963e4b2a6f3:ec9392705195bb6ee1aa4d72e9f3e713$"
+}
+}

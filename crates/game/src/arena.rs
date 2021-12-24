@@ -17,7 +17,7 @@ impl Arena {
 
     pub fn default() -> Result<Arena, String> {
         let mut data: [u128; BLOCK_TYPES_COUNT] = [0; BLOCK_TYPES_COUNT];
-        data[BlockType::WoodPlank as usize] = u128::MAX;
+        data[BlockType::GrassPlank as usize] = u128::MAX;
         let mapbits: MapBits = data.into();
         let map: Map = Map::default(mapbits)?;
         let players = Vec::new();

@@ -10,3 +10,6 @@ Gun down your opponents from the platform, and avoid getting shot down yourself.
 - `crates/game` - Game components and logic
 - `crates/gui` - GUI elements, sprite loader
 - `crates/network` - Netcode for client and server
+
+## Attributions
+- Zopto - [Platform 2D Tilesets](https://opengameart.org/content/platform-2d-tilesets)

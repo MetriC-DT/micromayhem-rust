@@ -19,14 +19,14 @@ trait Block {
 }
 
 pub enum BlockType {
-    WoodPlank,
-    WoodBlock,
+    GrassPlank,
+    GrassBlock,
 
     IcePlank,
     IceBlock,
 
-    SlimePlank,
-    SlimeBlock,
+    MudPlank,
+    MudBlock,
 
     // required to count number of enum elements.
     // should never use to represent an actual block type
@@ -47,7 +47,6 @@ impl fmt::Display for InvalidBlockTypeError {
 }
 
 
-
 impl Block for BlockType {
 
     /// Obtains the coefficient of friction for each type.
@@ -55,9 +54,9 @@ impl Block for BlockType {
     /// Used for "Slippery" feeling on blocks.
     fn get_friction(&self) -> BlockTypeResult<f32> {
         match self {
-            WoodPlank | WoodBlock => Ok(1.0),
+            GrassPlank | GrassBlock => Ok(1.0),
             IcePlank | IceBlock => Ok(0.5),
-            SlimeBlock | SlimePlank => Ok(1.0),
+            MudBlock | MudPlank => Ok(1.0),
 
             Total => Err(InvalidBlockTypeError)
         }
@@ -69,14 +68,14 @@ impl Block for BlockType {
     /// the player on the block.
     fn get_stickiness(&self) -> BlockTypeResult<f32> {
         match self {
-            WoodPlank => todo!(),
-            WoodBlock => todo!(),
+            GrassPlank => todo!(),
+            GrassBlock => todo!(),
 
             IcePlank => todo!(),
             IceBlock => todo!(),
 
-            SlimePlank => todo!(),
-            SlimeBlock => todo!(),
+            MudPlank => todo!(),
+            MudBlock => todo!(),
 
             Total => Err(InvalidBlockTypeError)
         }
@@ -87,14 +86,14 @@ impl Block for BlockType {
     /// a block. Players cannot phase through solid blocks
     fn is_solid(&self) -> BlockTypeResult<bool> {
         match self {
-            WoodPlank => Ok(false),
-            WoodBlock => Ok(true),
+            GrassPlank => Ok(false),
+            GrassBlock => Ok(true),
 
             IcePlank => Ok(false),
             IceBlock => Ok(true),
 
-            SlimePlank => Ok(false),
-            SlimeBlock => Ok(true),
+            MudPlank => Ok(false),
+            MudBlock => Ok(true),
 
             Total => Err(InvalidBlockTypeError)
         }
