@@ -1,39 +1,20 @@
-use game::{block::{BLOCK_HEIGHT, BLOCK_WIDTH}, map::{MAP_WIDTH, MAP_HEIGHT, PADDING_HEIGHT, PADDING_WIDTH, Map}, player::Player};
-use glam::Vec2;
-use ggez::{event::EventHandler, GameResult, timer, graphics::{self, Color, Canvas}, conf::NumSamples};
-use crate::{ASPECT_RATIO_X, ASPECT_RATIO_Y, BACKGROUND_COLOR};
-use crate::utils;
+use game::{block::{BLOCK_HEIGHT, BLOCK_WIDTH}, map::{HORIZONTAL_BLOCKS, VERTICAL_BLOCKS, VERTICAL_PADDING, HORIZONTAL_PADDING, Map}, player::Player, arena::Arena};
+use ggez::{event::EventHandler, GameResult, timer, graphics};
+use ggez::graphics::Color;
+use crate::{ASPECT_RATIO_X, ASPECT_RATIO_Y, BACKGROUND_COLOR, utils};
 
-
-// total width is (number of blocks horizontally + padding on both sides)
-const ARENA_WIDTH: f32 = BLOCK_WIDTH * ((MAP_WIDTH as f32) + 2.0 * (PADDING_WIDTH as f32));
-
-// total height is (number of blocks vertically + padding on both sides)
-const ARENA_HEIGHT: f32 = BLOCK_HEIGHT * ((MAP_HEIGHT as f32) + 2.0 * (PADDING_HEIGHT as f32));
 
 // the ticks per second for the physics simulation.
 const DESIRED_FPS: u32 = 60;
 
 #[derive(Debug)]
 pub struct GameState {
-    mapcanvas: graphics::Canvas,
-    map: Map,
-    player: Player,
+    arena: Arena,
 }
 
 impl GameState {
-    pub fn new(ctx: &mut ggez::Context, map: Map, player: Player) -> GameState {
-        let color_format = ggez::graphics::get_window_color_format(ctx);
-        let width: u16 = ARENA_WIDTH.ceil() as u16;
-        let height: u16 = ARENA_WIDTH.ceil() as u16;
-        let numsamples = NumSamples::One;
-
-        let mapcanvas: Canvas = Canvas::new(ctx, width, height, numsamples, color_format)
-            .expect("Unable to create new canvas");
-
-        // TODO: draw map onto the alternate canvas (done only once, because map stays static)
-
-        GameState { mapcanvas, map, player }
+    pub fn new(arena: Arena) -> GameState {
+        GameState {arena}
     }
 }
 
@@ -52,18 +33,6 @@ impl EventHandler for GameState {
     fn draw(&mut self, ctx: &mut ggez::Context) -> GameResult {
         // color background
         graphics::clear(ctx, Color::from_rgb_u32(BACKGROUND_COLOR));
-
-        // centers player on the screen.
-
-
-        // used to draw aspect ratio.
-        let (width, height) = graphics::size(ctx);
-
-        let heightratio = height / ASPECT_RATIO_Y;
-        let widthratio = width / ASPECT_RATIO_X;
-
-        // multiply this with aspect ratio to get correct dimensions
-        let multiplier = utils::min_float(heightratio, widthratio);
 
         graphics::present(ctx)
     }

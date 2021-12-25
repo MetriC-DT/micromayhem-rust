@@ -2,9 +2,8 @@ mod gamestate;
 mod configuration;
 mod utils;
 
-use std::{path::{self, Path}, env};
+use std::{path, env};
 
-use game::{map::Map, player::Player};
 use ggez::{GameResult, ContextBuilder, event};
 use gamestate::GameState;
 use utils::Atlas;
@@ -39,7 +38,7 @@ fn main() -> GameResult {
     cb = cb.add_resource_path(resource_dir);
 
     let (mut ctx, event_loop) = cb.build()?;
-    let mut g = GameState::new(&mut ctx, Map::default(), Player::default());
+    let mut g = GameState::new(Arena::default());
 
     event::run(ctx, event_loop, g)
 }

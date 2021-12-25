@@ -46,12 +46,12 @@ impl fmt::Display for MapBits {
         let MapBits(bits) = self;
 
         let mut string_rep = String::new();
-        for i in 0..MAP_HEIGHT {
+        for i in 0..VERTICAL_BLOCKS {
             let mask: u128 = ROWMASK << i;
             let row = (bits & mask) >> i;
 
-            for j in 0..MAP_WIDTH {
-                let mask2: u128 = 1 << (j * MAP_HEIGHT);
+            for j in 0..HORIZONTAL_BLOCKS {
+                let mask2: u128 = 1 << (j * VERTICAL_BLOCKS);
                 if row & mask2 != 0 {
                     string_rep += "1";
                 } else {
@@ -71,26 +71,26 @@ impl fmt::Display for MapBits {
 const INVALID_MAP: &str = "Invalid Map";
 
 /// width of a map in blocks
-pub const MAP_WIDTH: usize = 16;
+pub const HORIZONTAL_BLOCKS: usize = 16;
 
 /// height of a map in blocks
-pub const MAP_HEIGHT: usize = 8;
+pub const VERTICAL_BLOCKS: usize = 8;
 
 /// bitmask for getting an entire row.
 const ROWMASK: u128 = 1334440654591915542993625911497130241;
 
 /// bitmask for getting an entire column.
-const COLMASK: u128 = 1 << MAP_HEIGHT - 1;
+const COLMASK: u128 = 1 << VERTICAL_BLOCKS - 1;
 
 pub const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, -10.0]);
 
 /// horizontal padding of map in number of blocks
 /// This is the region around where player is considered to be alive.
-pub const PADDING_WIDTH: usize = 3;
+pub const HORIZONTAL_PADDING: usize = 3;
 
 /// vertical padding of map in number of blocks.
 /// This is the region around where player is considered to be alive.
-pub const PADDING_HEIGHT: usize = 3;
+pub const VERTICAL_PADDING: usize = 3;
 
 /// Represents a map object, which contains the locations
 /// of all the types of blocks, as well as the surrounding padding
