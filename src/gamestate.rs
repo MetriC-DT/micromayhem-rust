@@ -1,6 +1,7 @@
 use game::arena::Arena;
+use ggez::Context;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
-use ggez::graphics::Color;
+use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam};
 use crate::BACKGROUND_COLOR;
 
 
@@ -10,14 +11,30 @@ const DESIRED_FPS: u32 = 60;
 #[derive(Debug)]
 pub struct GameState {
     arena: Arena,
+    mapmesh: graphics::Mesh,
+}
+
+
+fn build_mapmesh(arena: &Arena, ctx: &mut Context) -> GameResult<Mesh> {
+    let mb = &mut MeshBuilder::new();
+    for blockrects in &arena.blockrects {
+        for rect in blockrects {
+            let r = ggez::graphics::Rect {x: rect.x, y: rect.y, w: rect.w, h: rect.h};
+            mb.rectangle(DrawMode::stroke(1.0), r, Color::BLACK);
+        }
+    }
+
+    mb.build(ctx)
 }
 
 impl GameState {
-    pub fn new(arena: Arena) -> GameState {
-        println!("{:?}", arena);
-        GameState {arena}
+    pub fn new(arena: Arena, ctx: &mut Context) -> GameState {
+        // println!("{:?}", arena);
+        let mapmesh = build_mapmesh(&arena, ctx).unwrap();
+        GameState {arena, mapmesh}
     }
 }
+
 
 impl EventHandler for GameState {
     fn update(&mut self, ctx: &mut ggez::Context) -> GameResult {
@@ -34,6 +51,8 @@ impl EventHandler for GameState {
     fn draw(&mut self, ctx: &mut ggez::Context) -> GameResult {
         // color background
         graphics::clear(ctx, Color::from_rgb_u32(BACKGROUND_COLOR));
+
+        graphics::draw(ctx, &self.mapmesh, DrawParam::default());
         graphics::present(ctx)
     }
 }

@@ -36,11 +36,14 @@ pub const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, -10.0]);
 
 /// horizontal padding of map in number of blocks
 /// This is the region around where player is considered to be alive.
-pub const HORIZONTAL_PADDING: usize = 3;
+pub const HORIZONTAL_PADDING: usize = 2;
 
 /// vertical padding of map in number of blocks.
 /// This is the region around where player is considered to be alive.
-pub const VERTICAL_PADDING: usize = 3;
+pub const VERTICAL_PADDING: usize = 8;
+
+/// vertical spacing in numbers of vertical blocks of spacing
+pub const VERTICAL_BLOCK_SPACING: usize = 8;
 
 /// represents the entire world of the game (entire map + players).
 
@@ -116,7 +119,7 @@ impl MapBits {
                 let result: u128 = 1 << (j + VERTICAL_BLOCKS * i);
                 if result & bits != 0 {
                     let x = (i + HORIZONTAL_PADDING) as f32 * BLOCK_WIDTH;
-                    let y = (j + VERTICAL_PADDING) as f32 * BLOCK_HEIGHT;
+                    let y = (j * VERTICAL_BLOCK_SPACING + VERTICAL_PADDING) as f32 * BLOCK_HEIGHT;
                     let w = BLOCK_WIDTH;
                     let h = BLOCK_HEIGHT;
                     blockrects.push(BlockRect {x, y, w, h, blocktype});

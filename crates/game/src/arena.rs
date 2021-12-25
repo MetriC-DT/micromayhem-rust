@@ -4,8 +4,8 @@ use strum::IntoEnumIterator;
 #[derive(Debug)]
 pub struct Arena {
     map: Map,
-    player: Player,
-    blockrects: Vec<Vec<BlockRect>>
+    pub player: Player,
+    pub blockrects: Vec<Vec<BlockRect>>
 }
 
 impl Default for Arena {

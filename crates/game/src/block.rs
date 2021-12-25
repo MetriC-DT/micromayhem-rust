@@ -2,11 +2,10 @@ use BlockType::*;
 use strum_macros::{EnumCount, EnumIter};
 
 /// Width of a block in pixels
-pub const BLOCK_WIDTH: f32 = 30.0;
+pub const BLOCK_WIDTH: f32 = 128.0;
 
 /// Height of a block in pixels
 pub const BLOCK_HEIGHT: f32 = 20.0;
-
 
 trait Block {
     fn get_friction(&self) -> f32;

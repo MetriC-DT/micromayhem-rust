@@ -39,7 +39,7 @@ fn main() -> GameResult {
     cb = cb.add_resource_path(resource_dir);
 
     let (mut ctx, event_loop) = cb.build()?;
-    let mut g = GameState::new(Arena::default());
+    let mut g = GameState::new(Arena::default(), &mut ctx);
 
     event::run(ctx, event_loop, g)
 }
