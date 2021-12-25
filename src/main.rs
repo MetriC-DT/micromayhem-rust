@@ -4,6 +4,7 @@ mod utils;
 
 use std::{path, env};
 
+use game::arena::Arena;
 use ggez::{GameResult, ContextBuilder, event};
 use gamestate::GameState;
 use utils::Atlas;

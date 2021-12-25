@@ -746,6 +746,8 @@ dependencies = [
  "bincode",
  "glam",
  "mint",
+ "num-derive",
+ "num-traits",
  "serde",
 ]
 

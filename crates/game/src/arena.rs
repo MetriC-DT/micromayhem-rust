@@ -1,17 +1,11 @@
-use crate::{map::{Map, HORIZONTAL_BLOCKS, HORIZONTAL_PADDING, VERTICAL_PADDING, VERTICAL_BLOCKS}, player::Player, block::{BLOCK_HEIGHT, BLOCK_WIDTH}};
-
-/// represents the entire world of the game (entire map + players).
-
-// total width is (number of blocks horizontally + padding on both sides)
-pub const ARENA_WIDTH: f32 = BLOCK_WIDTH * ((HORIZONTAL_BLOCKS as f32) + 2.0 * (HORIZONTAL_PADDING as f32));
-
-// total height is (number of blocks vertically + padding on both sides)
-pub const ARENA_HEIGHT: f32 = BLOCK_HEIGHT * ((VERTICAL_BLOCKS as f32) + 2.0 * (VERTICAL_PADDING as f32));
+use crate::{map::Map, player::Player, block::{BLOCK_TYPES_COUNT, BlockRect, BlockType}};
+use num_traits::FromPrimitive;
 
 #[derive(Debug)]
 pub struct Arena {
     map: Map,
     player: Player,
+    blockrects: Vec<BlockRect>
 }
 
 impl Default for Arena {
@@ -22,7 +16,19 @@ impl Default for Arena {
 
 impl Arena {
     pub fn new(map: Map, player: Player) -> Self {
-        Self { map, player }
+        let mut blockrects: Vec<BlockRect> = Vec::new();
+
+        for i in 0..BLOCK_TYPES_COUNT {
+            let blocktype: BlockType = match FromPrimitive::from_usize(i) {
+                Some(b) => b,
+                _ => continue
+            };
+
+            let mapbits = map.get_bits_of_type(blocktype).unwrap();
+            blockrects.append(&mut mapbits.to_block_rects(blocktype));
+        }
+
+        Self { map, player, blockrects }
     }
 
     pub fn update(dt: f32) {

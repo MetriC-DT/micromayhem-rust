@@ -3,7 +3,10 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
 use crate::block;
+use crate::block::BLOCK_HEIGHT;
 use crate::block::BLOCK_TYPES_COUNT;
+use crate::block::BLOCK_WIDTH;
+use crate::block::BlockRect;
 use crate::block::BlockType;
 use crate::block::InvalidBlockTypeError;
 use glam::const_vec2;
@@ -12,9 +15,46 @@ use bincode::deserialize_from;
 use bincode::serialize_into;
 use serde::{Serialize , Deserialize};
 
+
+/// Error message for invalid map.
+///
+/// TODO: refactor into actual enum of different errors.
+const INVALID_MAP: &str = "Invalid Map";
+
+/// width of a map in blocks
+pub const HORIZONTAL_BLOCKS: usize = 16;
+
+/// height of a map in blocks
+pub const VERTICAL_BLOCKS: usize = 8;
+
+/// bitmask for getting an entire row.
+const ROWMASK: u128 = 1334440654591915542993625911497130241;
+
+/// bitmask for getting an entire column.
+const COLMASK: u128 = 1 << VERTICAL_BLOCKS - 1;
+
+pub const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, -10.0]);
+
+/// horizontal padding of map in number of blocks
+/// This is the region around where player is considered to be alive.
+pub const HORIZONTAL_PADDING: usize = 3;
+
+/// vertical padding of map in number of blocks.
+/// This is the region around where player is considered to be alive.
+pub const VERTICAL_PADDING: usize = 3;
+
+/// represents the entire world of the game (entire map + players).
+
+// total width is (number of blocks horizontally + padding on both sides)
+pub const ARENA_WIDTH: f32 = BLOCK_WIDTH * ((HORIZONTAL_BLOCKS as f32) + 2.0 * (HORIZONTAL_PADDING as f32));
+
+// total height is (number of blocks vertically + padding on both sides)
+pub const ARENA_HEIGHT: f32 = BLOCK_HEIGHT * ((VERTICAL_BLOCKS as f32) + 2.0 * (VERTICAL_PADDING as f32));
+
 /// Type alias to represent all positions occupied by the 8x16
 /// grid of blocks of all types. Used internally.
 type MapBlocksList = [u128; block::BLOCK_TYPES_COUNT];
+
 
 /// Bits used to construct a map.
 #[derive(Debug, Serialize, Deserialize)]
@@ -65,32 +105,26 @@ impl fmt::Display for MapBits {
     }
 }
 
-/// Error message for invalid map.
-///
-/// TODO: refactor into actual enum of different errors.
-const INVALID_MAP: &str = "Invalid Map";
 
-/// width of a map in blocks
-pub const HORIZONTAL_BLOCKS: usize = 16;
+impl MapBits {
+    /// converts this mapbits to blockrects.
+    pub fn to_block_rects(&self, blocktype: BlockType) -> Vec<BlockRect> {
+        let mut blockrects = Vec::new();
 
-/// height of a map in blocks
-pub const VERTICAL_BLOCKS: usize = 8;
+        for i in 0..HORIZONTAL_BLOCKS {
+            for j in 0..VERTICAL_BLOCKS {
+                let x = (i + HORIZONTAL_PADDING) as f32 * BLOCK_WIDTH;
+                let y = (j + VERTICAL_PADDING) as f32 * BLOCK_HEIGHT;
+                let w = BLOCK_WIDTH;
+                let h = BLOCK_HEIGHT;
+                blockrects.push(BlockRect {x, y, w, h, blocktype});
+            }
+        }
 
-/// bitmask for getting an entire row.
-const ROWMASK: u128 = 1334440654591915542993625911497130241;
+        blockrects
+    }
+}
 
-/// bitmask for getting an entire column.
-const COLMASK: u128 = 1 << VERTICAL_BLOCKS - 1;
-
-pub const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, -10.0]);
-
-/// horizontal padding of map in number of blocks
-/// This is the region around where player is considered to be alive.
-pub const HORIZONTAL_PADDING: usize = 3;
-
-/// vertical padding of map in number of blocks.
-/// This is the region around where player is considered to be alive.
-pub const VERTICAL_PADDING: usize = 3;
 
 /// Represents a map object, which contains the locations
 /// of all the types of blocks, as well as the surrounding padding
@@ -102,10 +136,10 @@ pub const VERTICAL_PADDING: usize = 3;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Map {
     /// an array containing information about all the blocks. Each type
-    /// of block is represented as a `u128` type, with 8 bits for each column
-    /// for a total of 16 total columns.
+    /// of block is represented as a `u128` type (the MapBits struct), 
+    /// with 8 bits for each column for a total of 16 total columns.
     ///
-    /// The types of blocks are batched into one array for convenience.
+    /// The types of blocks are batched into one MapBlocks array for convenience.
     /// In order to access the information for a specific block type,
     /// call the `get_blocks_of_type(BlockType)` method.
     mapblocks: MapBlocks,
@@ -133,7 +167,6 @@ impl Default for Map {
 
         Map::new(mapblocks, GRAVITY_DEFAULT).unwrap()
     }
-
 }
 
 impl Map {
@@ -203,8 +236,8 @@ impl Map {
     /// obtains the locations that are occupied by blocks of specified type
     pub fn get_bits_of_type(&self, blocktype: block::BlockType) -> Result<MapBits, InvalidBlockTypeError> {
         let blockindex = blocktype as usize;
-        let MapBlocks(mapblocks) = self.mapblocks;
         let result = if blockindex < block::BLOCK_TYPES_COUNT {
+            let MapBlocks(mapblocks) = self.mapblocks;
             Ok(MapBits(mapblocks[blockindex]))
         }
         else {

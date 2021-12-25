@@ -1,7 +1,7 @@
-use game::{block::{BLOCK_HEIGHT, BLOCK_WIDTH}, map::{HORIZONTAL_BLOCKS, VERTICAL_BLOCKS, VERTICAL_PADDING, HORIZONTAL_PADDING, Map}, player::Player, arena::Arena};
+use game::arena::Arena;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::Color;
-use crate::{ASPECT_RATIO_X, ASPECT_RATIO_Y, BACKGROUND_COLOR, utils};
+use crate::BACKGROUND_COLOR;
 
 
 // the ticks per second for the physics simulation.
