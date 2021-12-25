@@ -153,7 +153,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "ground5.png",
+	"filename": "grassground.png",
 	"frame": {"x":384,"y":512,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,

@@ -2,7 +2,6 @@ use core::fmt;
 
 use BlockType::*;
 
-
 type BlockTypeResult<T> = Result<T, InvalidBlockTypeError>;
 
 

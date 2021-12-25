@@ -2,11 +2,12 @@ mod gamestate;
 mod configuration;
 mod utils;
 
-use std::{path, env};
+use std::{path::{self, Path}, env};
 
 use ggez::{GameResult, ContextBuilder, event};
 use gamestate::GameState;
 use game::arena::Arena;
+use utils::Atlas;
 
 
 pub const ICON_PATH: &str = "";
@@ -38,7 +39,7 @@ fn main() -> GameResult {
     cb = cb.add_resource_path(resource_dir);
 
     let (mut ctx, event_loop) = cb.build()?;
-    let mut g = GameState::new(Arena::default().unwrap(), &mut ctx);
+    let mut g = GameState::new(Arena::default(), &mut ctx);
 
-    event::run(ctx, event_loop, g);
+    event::run(ctx, event_loop, g)
 }

@@ -9,7 +9,7 @@ fn allow_basic_map_init() {
     let mut data: [u128; BLOCK_TYPES_COUNT] = [0; BLOCK_TYPES_COUNT];
     data[0] = a;
     data[1] = b;
-    let result = Map::default(data.into());
+    let result = Map::from_mapblocks(data.into());
 
     assert!(result.is_ok());
 }
@@ -23,20 +23,20 @@ fn allow_basic_map_2_init() {
     data[0] = a;
     data[1] = b;
 
-    let result = Map::default(data.into());
+    let result = Map::from_mapblocks(data.into());
     assert!(result.is_ok());
 }
 
 #[test]
 fn allow_basic_map_3_init() {
     let data: [u128; BLOCK_TYPES_COUNT] = [0; BLOCK_TYPES_COUNT];
-    let result = Map::default(data.into());
+    let result = Map::from_mapblocks(data.into());
     assert!(result.is_ok());
 
     let mut data2: [u128; BLOCK_TYPES_COUNT] = [0; BLOCK_TYPES_COUNT];
     data2[0] = 1;
 
-    let result2 = Map::default(data2.into());
+    let result2 = Map::from_mapblocks(data2.into());
     assert!(result2.is_ok());
 }
 
@@ -48,7 +48,7 @@ fn forbid_basic_map_init() {
     let mut data: [u128; BLOCK_TYPES_COUNT] = [0; BLOCK_TYPES_COUNT];
     data[0] = a;
     data[1] = b;
-    let result = Map::default(data.into());
+    let result = Map::from_mapblocks(data.into());
 
     assert!(result.is_err());
 }
@@ -57,7 +57,7 @@ fn forbid_basic_map_init() {
 fn disallow_full_overlap_map_init() {
     let m = u128::MAX;
     let data: [u128; BLOCK_TYPES_COUNT] = [m; BLOCK_TYPES_COUNT];
-    let result = Map::default(data.into());
+    let result = Map::from_mapblocks(data.into());
     assert!(result.is_err());
 }
 
@@ -67,7 +67,7 @@ fn test_serialize_deserialize_map() {
     let path = Path::new(f);
     let mut data: [u128; BLOCK_TYPES_COUNT] = [0; BLOCK_TYPES_COUNT];
     data[0] = u128::MAX;
-    let result = Map::default(data.into()).unwrap();
+    let result = Map::from_mapblocks(data.into()).unwrap();
 
     let writesuccess = result.write_to_file(f);
 
