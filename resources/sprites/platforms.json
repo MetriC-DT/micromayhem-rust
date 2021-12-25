@@ -1,7 +1,7 @@
 {"frames": [
 
 {
-	"filename": "Grass/gras1.png",
+	"filename": "gras1.png",
 	"frame": {"x":0,"y":0,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -9,7 +9,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/gras2.png",
+	"filename": "gras2.png",
 	"frame": {"x":128,"y":0,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -17,7 +17,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/gras3.png",
+	"filename": "gras3.png",
 	"frame": {"x":256,"y":0,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -25,7 +25,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grass top/grass1.png",
+	"filename": "grass1.png",
 	"frame": {"x":384,"y":0,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -33,7 +33,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grass top/grass2.png",
+	"filename": "grass2.png",
 	"frame": {"x":0,"y":128,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -41,7 +41,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grass top/grass3.png",
+	"filename": "grass3.png",
 	"frame": {"x":128,"y":128,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -49,7 +49,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grass top/ground0.png",
+	"filename": "ground0.png",
 	"frame": {"x":256,"y":128,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -57,7 +57,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grass4.png",
+	"filename": "grass4.png",
 	"frame": {"x":384,"y":128,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -65,7 +65,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grass5.png",
+	"filename": "grass5.png",
 	"frame": {"x":0,"y":256,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -73,7 +73,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grass6.png",
+	"filename": "grass6.png",
 	"frame": {"x":128,"y":256,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -81,7 +81,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grass7.png",
+	"filename": "grass7.png",
 	"frame": {"x":256,"y":256,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -89,7 +89,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grass8.png",
+	"filename": "grass8.png",
 	"frame": {"x":384,"y":256,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -97,7 +97,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grass9.png",
+	"filename": "grass9.png",
 	"frame": {"x":0,"y":384,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -105,7 +105,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grasscorner1.png",
+	"filename": "grasscorner1.png",
 	"frame": {"x":128,"y":384,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -113,7 +113,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grasscorner2.png",
+	"filename": "grasscorner2.png",
 	"frame": {"x":256,"y":384,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -121,7 +121,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grasscorner3.png",
+	"filename": "grasscorner3.png",
 	"frame": {"x":384,"y":384,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -129,7 +129,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grasscorner4.png",
+	"filename": "grasscorner4.png",
 	"frame": {"x":0,"y":512,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -137,7 +137,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grassl.png",
+	"filename": "grassl.png",
 	"frame": {"x":128,"y":512,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -145,7 +145,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/grassr.png",
+	"filename": "grassr.png",
 	"frame": {"x":256,"y":512,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -153,7 +153,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "Grass/ground5.png",
+	"filename": "ground5.png",
 	"frame": {"x":384,"y":512,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -161,7 +161,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ground0.png",
+	"filename": "ground0.png",
 	"frame": {"x":0,"y":640,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -169,7 +169,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ground1.png",
+	"filename": "ground1.png",
 	"frame": {"x":128,"y":640,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -177,7 +177,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ground2.png",
+	"filename": "ground2.png",
 	"frame": {"x":256,"y":640,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -185,7 +185,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ground3.png",
+	"filename": "ground3.png",
 	"frame": {"x":384,"y":640,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -193,7 +193,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ground4.png",
+	"filename": "ground4.png",
 	"frame": {"x":0,"y":768,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -201,7 +201,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ground5.png",
+	"filename": "ground5.png",
 	"frame": {"x":128,"y":768,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -209,7 +209,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ground6.png",
+	"filename": "ground6.png",
 	"frame": {"x":256,"y":768,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -217,7 +217,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ground7.png",
+	"filename": "ground7.png",
 	"frame": {"x":384,"y":768,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -225,7 +225,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ground8.png",
+	"filename": "ground8.png",
 	"frame": {"x":0,"y":896,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -233,7 +233,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ground9.png",
+	"filename": "ground9.png",
 	"frame": {"x":128,"y":896,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -241,7 +241,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/groundIce1.png",
+	"filename": "groundIce1.png",
 	"frame": {"x":256,"y":896,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -249,7 +249,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/groundice2.png",
+	"filename": "groundice2.png",
 	"frame": {"x":384,"y":896,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -257,7 +257,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/groundice3.png",
+	"filename": "groundice3.png",
 	"frame": {"x":0,"y":1024,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -265,7 +265,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/groundl.png",
+	"filename": "groundl.png",
 	"frame": {"x":128,"y":1024,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -273,7 +273,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/groundr.png",
+	"filename": "groundr.png",
 	"frame": {"x":256,"y":1024,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -281,7 +281,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "winter ground/ice.png",
+	"filename": "ice.png",
 	"frame": {"x":384,"y":1024,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,

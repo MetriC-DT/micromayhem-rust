@@ -14,15 +14,11 @@ pub const BLOCK_HEIGHT: f32 = 20.0;
 
 trait Block {
     fn get_friction(&self) -> BlockTypeResult<f32>;
-    fn get_stickiness(&self) -> BlockTypeResult<f32>;
 }
 
 pub enum BlockType {
     GrassBlock,
-
     IceBlock,
-
-    MudBlock,
 
     // required to count number of enum elements.
     // should never use to represent an actual block type
@@ -52,21 +48,7 @@ impl Block for BlockType {
         match self {
             GrassBlock => Ok(1.0),
             IceBlock => Ok(0.5),
-            MudPlank => Ok(1.0),
 
-            Total => Err(InvalidBlockTypeError)
-        }
-    }
-
-    /// Obtains the stickiness for each type.
-    ///
-    /// Stickiness directly modifies the velocity of 
-    /// the player on the block.
-    fn get_stickiness(&self) -> BlockTypeResult<f32> {
-        match self {
-            GrassBlock => todo!(),
-            IceBlock => todo!(),
-            MudBlock => todo!(),
             Total => Err(InvalidBlockTypeError)
         }
     }
