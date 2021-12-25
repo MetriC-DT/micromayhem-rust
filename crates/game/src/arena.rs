@@ -1,11 +1,11 @@
-use crate::{map::Map, player::Player, block::{BLOCK_TYPES_COUNT, BlockRect, BlockType}};
-use num_traits::FromPrimitive;
+use crate::{map::Map, player::Player, block::{BlockRect, BlockType}};
+use strum::IntoEnumIterator;
 
 #[derive(Debug)]
 pub struct Arena {
     map: Map,
     player: Player,
-    blockrects: Vec<BlockRect>
+    blockrects: Vec<Vec<BlockRect>>
 }
 
 impl Default for Arena {
@@ -16,17 +16,9 @@ impl Default for Arena {
 
 impl Arena {
     pub fn new(map: Map, player: Player) -> Self {
-        let mut blockrects: Vec<BlockRect> = Vec::new();
-
-        for i in 0..BLOCK_TYPES_COUNT {
-            let blocktype: BlockType = match FromPrimitive::from_usize(i) {
-                Some(b) => b,
-                _ => continue
-            };
-
-            let mapbits = map.get_bits_of_type(blocktype).unwrap();
-            blockrects.append(&mut mapbits.to_block_rects(blocktype));
-        }
+        let blockrects = BlockType::iter()
+            .map(|blocktype| {map.get_bits_of_type(blocktype).to_block_rects(blocktype)})
+            .collect();
 
         Self { map, player, blockrects }
     }

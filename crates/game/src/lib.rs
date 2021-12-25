@@ -4,13 +4,6 @@ pub mod arena;
 pub mod player;
 pub mod weapon;
 
-
-#[macro_use]
-extern crate num_derive;
-extern crate num_traits;
-use num_traits::FromPrimitive;
-use num_derive::FromPrimitive;
-
 #[cfg(test)]
 mod test_map;
 

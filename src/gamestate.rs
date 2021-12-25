@@ -14,6 +14,7 @@ pub struct GameState {
 
 impl GameState {
     pub fn new(arena: Arena) -> GameState {
+        println!("{:?}", arena);
         GameState {arena}
     }
 }
@@ -33,7 +34,6 @@ impl EventHandler for GameState {
     fn draw(&mut self, ctx: &mut ggez::Context) -> GameResult {
         // color background
         graphics::clear(ctx, Color::from_rgb_u32(BACKGROUND_COLOR));
-
         graphics::present(ctx)
     }
 }

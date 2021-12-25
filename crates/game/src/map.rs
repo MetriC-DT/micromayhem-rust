@@ -4,16 +4,15 @@ use std::io::BufReader;
 use std::io::BufWriter;
 use crate::block;
 use crate::block::BLOCK_HEIGHT;
-use crate::block::BLOCK_TYPES_COUNT;
 use crate::block::BLOCK_WIDTH;
 use crate::block::BlockRect;
 use crate::block::BlockType;
-use crate::block::InvalidBlockTypeError;
 use glam::const_vec2;
 use glam::Vec2;
 use bincode::deserialize_from;
 use bincode::serialize_into;
 use serde::{Serialize , Deserialize};
+use strum::EnumCount;
 
 
 /// Error message for invalid map.
@@ -53,7 +52,7 @@ pub const ARENA_HEIGHT: f32 = BLOCK_HEIGHT * ((VERTICAL_BLOCKS as f32) + 2.0 * (
 
 /// Type alias to represent all positions occupied by the 8x16
 /// grid of blocks of all types. Used internally.
-type MapBlocksList = [u128; block::BLOCK_TYPES_COUNT];
+type MapBlocksList = [u128; BlockType::COUNT];
 
 
 /// Bits used to construct a map.
@@ -107,17 +106,21 @@ impl fmt::Display for MapBits {
 
 
 impl MapBits {
-    /// converts this mapbits to blockrects.
+    /// converts this mapbits to a vector of blockrects.
     pub fn to_block_rects(&self, blocktype: BlockType) -> Vec<BlockRect> {
         let mut blockrects = Vec::new();
+        let MapBits(bits) = self;
 
         for i in 0..HORIZONTAL_BLOCKS {
             for j in 0..VERTICAL_BLOCKS {
-                let x = (i + HORIZONTAL_PADDING) as f32 * BLOCK_WIDTH;
-                let y = (j + VERTICAL_PADDING) as f32 * BLOCK_HEIGHT;
-                let w = BLOCK_WIDTH;
-                let h = BLOCK_HEIGHT;
-                blockrects.push(BlockRect {x, y, w, h, blocktype});
+                let result: u128 = 1 << (j + VERTICAL_BLOCKS * i);
+                if result & bits != 0 {
+                    let x = (i + HORIZONTAL_PADDING) as f32 * BLOCK_WIDTH;
+                    let y = (j + VERTICAL_PADDING) as f32 * BLOCK_HEIGHT;
+                    let w = BLOCK_WIDTH;
+                    let h = BLOCK_HEIGHT;
+                    blockrects.push(BlockRect {x, y, w, h, blocktype});
+                }
             }
         }
 
@@ -161,7 +164,7 @@ impl Default for Map {
 
     /// creates a default map. Used only for testing.
     fn default() -> Map {
-        let mut data: [u128; BLOCK_TYPES_COUNT] = [0; BLOCK_TYPES_COUNT];
+        let mut data: [u128; BlockType::COUNT] = [0; BlockType::COUNT];
         data[BlockType::GrassBlock as usize] = u128::MAX;
         let mapblocks: MapBlocks = data.into();
 
@@ -234,17 +237,13 @@ impl Map {
     }
 
     /// obtains the locations that are occupied by blocks of specified type
-    pub fn get_bits_of_type(&self, blocktype: block::BlockType) -> Result<MapBits, InvalidBlockTypeError> {
+    pub fn get_bits_of_type(&self, blocktype: block::BlockType) -> MapBits {
         let blockindex = blocktype as usize;
-        let result = if blockindex < block::BLOCK_TYPES_COUNT {
-            let MapBlocks(mapblocks) = self.mapblocks;
-            Ok(MapBits(mapblocks[blockindex]))
-        }
-        else {
-            Err(block::InvalidBlockTypeError)
-        };
+        let MapBlocks(mapblocks) = self.mapblocks;
 
-        result
+        // it will always be the case that mapblockslist will have a greater
+        // length than blockindex. Therefore, we can just call directly with no checks
+        MapBits(mapblocks[blockindex])
     }
 
     /// Obtains the locations that are occupied by blocks of any type.
