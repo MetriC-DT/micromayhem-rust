@@ -2,7 +2,8 @@ use ggez::conf::Conf;
 use ggez::ContextBuilder;
 use ggez::conf::WindowMode;
 use ggez::conf::WindowSetup;
-use crate::*;
+use crate::GAME_TITLE;
+use crate::ICON_PATH;
 
 pub fn load_configuration(cb: ContextBuilder) -> ContextBuilder {
     // tries to read any user configuration, if it exists.

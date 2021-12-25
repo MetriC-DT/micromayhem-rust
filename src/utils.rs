@@ -54,7 +54,8 @@ impl Atlas {
 
         let file = File::open(texture_atlas_file).expect("Couldn't find the texture_atlas file");
         let buf_reader = BufReader::new(file);
-        serde_json::from_reader(buf_reader).expect("Couldn't create texture atlas")
+        let formatted = format!("Couldn't create texture atlas from {:?}", texture_atlas_file);
+        serde_json::from_reader(buf_reader).expect(&formatted)
     }
 
     /// Returns a sprite from the Atlas.

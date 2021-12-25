@@ -3,6 +3,7 @@ use ggez::Context;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam};
 use crate::BACKGROUND_COLOR;
+use crate::utils::Atlas;
 
 
 // the ticks per second for the physics simulation.
@@ -11,16 +12,18 @@ const DESIRED_FPS: u32 = 60;
 #[derive(Debug)]
 pub struct GameState {
     arena: Arena,
-    mapmesh: graphics::Mesh,
+    mapmesh: Mesh,
+    atlas: Atlas,
 }
 
 
+/// builds a mapmesh from a given arena.
 fn build_mapmesh(arena: &Arena, ctx: &mut Context) -> GameResult<Mesh> {
     let mb = &mut MeshBuilder::new();
     for blockrects in &arena.blockrects {
         for rect in blockrects {
             let r = ggez::graphics::Rect {x: rect.x, y: rect.y, w: rect.w, h: rect.h};
-            mb.rectangle(DrawMode::stroke(1.0), r, Color::BLACK);
+            mb.rectangle(DrawMode::stroke(1.0), r, Color::BLACK)?;
         }
     }
 
@@ -28,10 +31,9 @@ fn build_mapmesh(arena: &Arena, ctx: &mut Context) -> GameResult<Mesh> {
 }
 
 impl GameState {
-    pub fn new(arena: Arena, ctx: &mut Context) -> GameState {
-        // println!("{:?}", arena);
+    pub fn new(arena: Arena, ctx: &mut Context, atlas: Atlas) -> GameState {
         let mapmesh = build_mapmesh(&arena, ctx).unwrap();
-        GameState {arena, mapmesh}
+        GameState {arena, mapmesh, atlas}
     }
 }
 
@@ -49,10 +51,11 @@ impl EventHandler for GameState {
     }
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> GameResult {
+        println!("{}", timer::fps(ctx));
         // color background
         graphics::clear(ctx, Color::from_rgb_u32(BACKGROUND_COLOR));
+        graphics::draw(ctx, &self.mapmesh, DrawParam::default())?;
 
-        graphics::draw(ctx, &self.mapmesh, DrawParam::default());
         graphics::present(ctx)
     }
 }
