@@ -12,4 +12,4 @@ Gun down your opponents from the platform, and avoid getting shot down yourself.
 - `crates/network` - Netcode for client and server
 
 ## Attributions
-- Zopto - [Platform 2D Tilesets](https://opengameart.org/content/platform-2d-tilesets)
+- Marta Nowaczyk - [Platform and Sprite Art](https://opengameart.org/users/aetherna)

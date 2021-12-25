@@ -31,10 +31,10 @@ pub type BlocksResult = Result<u128, block::InvalidBlockTypeError>;
 const INVALID_MAP: &str = "Invalid Map";
 
 /// width of a map in blocks
-const MAP_WIDTH: usize = 16;
+pub const MAP_WIDTH: usize = 16;
 
 /// height of a map in blocks
-const MAP_HEIGHT: usize = 8;
+pub const MAP_HEIGHT: usize = 8;
 
 /// bitmask for getting an entire row.
 const ROWMASK: u128 = 1334440654591915542993625911497130241;
@@ -189,12 +189,4 @@ impl Map {
 
         string_rep
     }
-}
-
-#[test]
-fn map_string_representation() {
-    let data = [1<<127, 1<<126, 1<<105, 1<<2, 1<<80, 1<<8].into();
-    let result = Map::new(data, GRAVITY_DEFAULT).unwrap();
-    let string_rep = "0100000000100000\n0000000000000100\n1000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000001\n0000000000000001\n";
-    assert_eq!(string_rep, Map::blocks_result_string(&result.get_all_occupied()));
 }
