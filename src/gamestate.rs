@@ -1,35 +1,41 @@
-use game::arena::Arena;
+use game::{block::{BLOCK_HEIGHT, BLOCK_WIDTH}, map::{MAP_WIDTH, MAP_HEIGHT, PADDING_HEIGHT, PADDING_WIDTH, Map}, player::Player};
+use glam::Vec2;
 use ggez::{event::EventHandler, GameResult, timer, graphics::{self, Color, Canvas}, conf::NumSamples};
 use crate::{ASPECT_RATIO_X, ASPECT_RATIO_Y, BACKGROUND_COLOR};
 use crate::utils;
 
+
+// total width is (number of blocks horizontally + padding on both sides)
+const ARENA_WIDTH: f32 = BLOCK_WIDTH * ((MAP_WIDTH as f32) + 2.0 * (PADDING_WIDTH as f32));
+
+// total height is (number of blocks vertically + padding on both sides)
+const ARENA_HEIGHT: f32 = BLOCK_HEIGHT * ((MAP_HEIGHT as f32) + 2.0 * (PADDING_HEIGHT as f32));
+
+// the ticks per second for the physics simulation.
+const DESIRED_FPS: u32 = 60;
+
 #[derive(Debug)]
 pub struct GameState {
-    arena: Arena,
     mapcanvas: graphics::Canvas,
+    map: Map,
+    player: Player,
 }
 
 impl GameState {
-    pub fn new(arena: Arena, ctx: &mut ggez::Context) -> GameState {
+    pub fn new(ctx: &mut ggez::Context, map: Map, player: Player) -> GameState {
         let color_format = ggez::graphics::get_window_color_format(ctx);
-        let width: u16 = (arena.width).ceil() as u16;
-        let height: u16 = (arena.height).ceil() as u16;
+        let width: u16 = ARENA_WIDTH.ceil() as u16;
+        let height: u16 = ARENA_WIDTH.ceil() as u16;
         let numsamples = NumSamples::One;
 
         let mapcanvas: Canvas = Canvas::new(ctx, width, height, numsamples, color_format)
             .expect("Unable to create new canvas");
 
-        // draw map onto the alternate canvas (done only once, because map stays static)
+        // TODO: draw map onto the alternate canvas (done only once, because map stays static)
 
-
-        GameState {
-            arena,
-            mapcanvas
-        }
+        GameState { mapcanvas, map, player }
     }
 }
-
-const DESIRED_FPS: u32 = 60;
 
 impl EventHandler for GameState {
     fn update(&mut self, ctx: &mut ggez::Context) -> GameResult {
@@ -38,7 +44,6 @@ impl EventHandler for GameState {
         // frame fitting in the time since the last update.
         while timer::check_update_time(ctx, DESIRED_FPS) {
             let dt = 1.0 / (DESIRED_FPS as f32);
-            self.arena.update(dt);
         }
 
         Ok(())
