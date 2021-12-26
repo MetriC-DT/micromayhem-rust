@@ -15,6 +15,7 @@ pub struct Player {
     team: usize,
     damage_multiplier: f32,
     lives: usize,
+    mass: f32,
 }
 
 impl Player {
@@ -57,7 +58,8 @@ impl Default for Player {
             current_weapon,
             team: 0,
             damage_multiplier: 0.0,
-            lives: 3
+            lives: 3,
+            mass: 1.0
         }
     }
 }

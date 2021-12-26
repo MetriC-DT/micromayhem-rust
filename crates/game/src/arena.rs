@@ -35,11 +35,17 @@ impl Arena {
             .map(|blocktype| {map.get_bits_of_type(blocktype).to_block_rects(blocktype)})
             .collect();
 
-        println!("{}", map);
         Self { map, player, blockrects }
     }
 
-    pub fn update(dt: f32) {
-        todo!();
+    pub fn update(&mut self, dt: f32) {
+        // TODO: calculates the acceleration experienced by the player, with all inputs accounted for.
+        //
+        // Considers forces from:
+        // gun recoil + weight + block friction + block normal + jump inputs
+        self.player.set_acceleration(self.map.get_gravity());
+
+        // TODO: find the pixel of the lowest block to plug into the second argument.
+        self.player.update(dt, ARENA_HEIGHT);
     }
 }
