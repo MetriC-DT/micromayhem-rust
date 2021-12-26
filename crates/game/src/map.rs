@@ -27,11 +27,12 @@ pub const HORIZONTAL_BLOCKS: usize = 16;
 pub const VERTICAL_BLOCKS: usize = 8;
 
 /// bitmask for getting an entire row.
-const ROWMASK: u128 = 1334440654591915542993625911497130241;
+const ROWMASK: i128 = 1334440654591915542993625911497130241;
 
 /// bitmask for getting an entire column.
-const COLMASK: u128 = 1 << VERTICAL_BLOCKS - 1;
+const COLMASK: i128 = 1 << VERTICAL_BLOCKS - 1;
 
+/// default gravity limit
 pub const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, -10.0]);
 
 /// horizontal padding of map in number of blocks
@@ -47,7 +48,7 @@ pub const VERTICAL_BLOCK_SPACING: usize = 8;
 
 /// Type alias to represent all positions occupied by the 8x16
 /// grid of blocks of all types. Used internally.
-type MapBlocksList = [u128; BlockType::COUNT];
+pub type MapBlocksList = [i128; BlockType::COUNT];
 
 
 /// Bits used to construct a map.
@@ -71,7 +72,7 @@ impl From<MapBlocksList> for MapBlocks {
 /// 5 13 ... 125
 /// 6 14 ... 126
 /// 7 15 ... 127
-pub struct MapBits(u128);
+pub struct MapBits(i128);
 
 /// MapBits represented as a string.
 impl fmt::Display for MapBits {
@@ -81,11 +82,11 @@ impl fmt::Display for MapBits {
 
         let mut string_rep = String::new();
         for i in 0..VERTICAL_BLOCKS {
-            let mask: u128 = ROWMASK << i;
+            let mask: i128 = ROWMASK << i;
             let row = (bits & mask) >> i;
 
             for j in 0..HORIZONTAL_BLOCKS {
-                let mask2: u128 = 1 << (j * VERTICAL_BLOCKS);
+                let mask2: i128 = 1 << (j * VERTICAL_BLOCKS);
                 if row & mask2 != 0 {
                     string_rep += "1";
                 } else {
@@ -108,7 +109,7 @@ impl MapBits {
 
         for i in 0..HORIZONTAL_BLOCKS {
             for j in 0..VERTICAL_BLOCKS {
-                let result: u128 = 1 << (j + VERTICAL_BLOCKS * i);
+                let result: i128 = 1 << (j + VERTICAL_BLOCKS * i);
                 if result & bits != 0 {
                     let x = (i + HORIZONTAL_PADDING) as f32 * BLOCK_WIDTH;
                     let y = (j * VERTICAL_BLOCK_SPACING + VERTICAL_PADDING) as f32 * BLOCK_HEIGHT;
@@ -134,7 +135,7 @@ impl MapBits {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Map {
     /// an array containing information about all the blocks. Each type
-    /// of block is represented as a `u128` type (the MapBits struct), 
+    /// of block is represented as a `i128` type (the MapBits struct), 
     /// with 8 bits for each column for a total of 16 total columns.
     ///
     /// The types of blocks are batched into one MapBlocks array for convenience.
@@ -159,8 +160,8 @@ impl Default for Map {
 
     /// creates a default map. Used only for testing.
     fn default() -> Map {
-        let mut data: [u128; BlockType::COUNT] = [0; BlockType::COUNT];
-        data[BlockType::GrassBlock as usize] = u128::MAX;
+        let mut data: [i128; BlockType::COUNT] = [0; BlockType::COUNT];
+        data[BlockType::GrassBlock as usize] = -1;
         let mapblocks: MapBlocks = data.into();
 
         Map::new(mapblocks, GRAVITY_DEFAULT).unwrap()
@@ -207,7 +208,7 @@ impl Map {
         let MapBlocks(bits) = mapblocks;
         let nonzerocount = bits.into_iter().filter(|&x| x != 0).count();
         if nonzerocount > 1 {
-            let overlaps = bits.into_iter().fold(u128::MAX, |acc, x| {
+            let overlaps = bits.into_iter().fold(-1, |acc, x| {
                 if x == 0 {
                     acc
                 } else {

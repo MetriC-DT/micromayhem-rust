@@ -35,6 +35,7 @@ impl Arena {
             .map(|blocktype| {map.get_bits_of_type(blocktype).to_block_rects(blocktype)})
             .collect();
 
+        println!("{}", map);
         Self { map, player, blockrects }
     }
 

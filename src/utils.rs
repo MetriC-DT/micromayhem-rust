@@ -3,17 +3,6 @@ use serde::Deserialize;
 use ggez::graphics;
 use glam::Vec2;
 
-/// obtains the minimum of two f32
-pub fn min_float(a: f32, b: f32) -> f32 {
-    return (a + b - (a - b).abs()) / 2.0;
-}
-
-/// obtains the maximum of two f32
-pub fn max_float(a: f32, b: f32) -> f32 {
-    return (a + b + (a - b).abs()) / 2.0;
-}
-
-
 /// structs used to get the sprite images from the spritesheet.
 #[derive(Debug, Deserialize)]
 pub struct JsonRect {
