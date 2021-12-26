@@ -1,6 +1,21 @@
-use crate::{map::Map, player::Player, block::{BlockRect, BlockType}};
+use crate::{map::Map, player::Player, block::{BlockRect, BlockType, BLOCK_HEIGHT, BLOCK_WIDTH}};
+use crate::map::VERTICAL_PADDING;
+use crate::map::VERTICAL_BLOCK_SPACING;
+use crate::map::VERTICAL_BLOCKS;
+use crate::map::HORIZONTAL_BLOCKS;
+use crate::map::HORIZONTAL_PADDING;
 use strum::IntoEnumIterator;
 
+/// total width in pixels
+/// (number of blocks horizontally + padding on both sides)
+pub const ARENA_WIDTH: f32 = BLOCK_WIDTH * ((HORIZONTAL_BLOCKS as f32) + 2.0 * (HORIZONTAL_PADDING as f32));
+
+/// total height in pixels
+/// (number of blocks vertically + padding on both sides)
+pub const ARENA_HEIGHT: f32 = BLOCK_HEIGHT * ((VERTICAL_BLOCKS * VERTICAL_BLOCK_SPACING) as f32 + 2.0 * (VERTICAL_PADDING as f32));
+
+
+/// represents the entire world of the game (entire map + players).
 #[derive(Debug)]
 pub struct Arena {
     map: Map,

@@ -3,10 +3,12 @@ use glam::Vec2;
 
 #[derive(Debug)]
 pub struct Player {
-    position: Vec2,
-    velocity: Vec2,
-    acceleration: Vec2,
-    name: String,
+    pub position: Vec2,
+    pub velocity: Vec2,
+    pub acceleration: Vec2,
+    pub name: String,
+    pub width: f32,
+    pub height: f32,
     default_weapon: Box<dyn Weapon>,
     current_weapon: Box<dyn Weapon>,
     team: usize,
@@ -15,29 +17,6 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(position: Vec2,
-               velocity: Vec2,
-               acceleration: Vec2,
-               name: String,
-               default_weapon: Box<dyn Weapon>,
-               current_weapon: Box<dyn Weapon>,
-               team: usize,
-               damage_multiplier: f32,
-               lives: usize) -> Self {
-
-        Self {
-            position,
-            velocity,
-            acceleration,
-            name,
-            default_weapon,
-            current_weapon,
-            team,
-            damage_multiplier,
-            lives
-        }
-    }
-
     pub fn get_new_default_weapon(&self) -> Box<dyn Weapon> {
         self.default_weapon.clone_weapon()
     }
@@ -48,16 +27,18 @@ impl Default for Player {
         let default_weapon = Box::new(BasicGun{});
         let current_weapon = default_weapon.clone_weapon();
 
-        Player::new(
-            Vec2::ZERO,
-            Vec2::ZERO,
-            Vec2::ZERO,
-            String::new(),
+        Player {
+            position: Vec2::ZERO,
+            velocity: Vec2::ZERO,
+            acceleration: Vec2::ZERO,
+            name: String::new(),
+            width: 10.0,
+            height: 10.0,
             default_weapon,
             current_weapon,
-            0,
-            0.0,
-            3
-        )
+            team: 0,
+            damage_multiplier: 0.0,
+            lives: 3
+        }
     }
 }

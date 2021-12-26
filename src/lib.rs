@@ -1,6 +1,7 @@
 pub mod gamestate;
 pub mod configuration;
 pub mod utils;
+pub mod viewport;
 
 pub const ICON_PATH: &str = "";
 pub const GAME_TITLE: &str = "Micro Mayhem";

@@ -1,9 +1,13 @@
 use game::arena::Arena;
 use ggez::Context;
+use ggez::event::KeyCode;
+use ggez::input::keyboard;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam};
+use glam::Vec2;
 use crate::BACKGROUND_COLOR;
 use crate::utils::Atlas;
+use crate::viewport::Viewport;
 
 
 // the ticks per second for the physics simulation.
@@ -45,16 +49,39 @@ impl EventHandler for GameState {
         // frame fitting in the time since the last update.
         while timer::check_update_time(ctx, DESIRED_FPS) {
             let dt = 1.0 / (DESIRED_FPS as f32);
+            if keyboard::is_key_pressed(ctx, KeyCode::W) {
+                self.arena.player.position -= Vec2::new(0.0, 10.0);
+            }
+            if keyboard::is_key_pressed(ctx, KeyCode::A) {
+                self.arena.player.position -= Vec2::new(10.0, 0.0);
+            }
+            if keyboard::is_key_pressed(ctx, KeyCode::S) {
+                self.arena.player.position += Vec2::new(0.0, 10.0);
+            }
+            if keyboard::is_key_pressed(ctx, KeyCode::D) {
+                self.arena.player.position += Vec2::new(10.0, 0.0);
+            }
         }
 
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> GameResult {
-        println!("{}", timer::fps(ctx));
         // color background
         graphics::clear(ctx, Color::from_rgb_u32(BACKGROUND_COLOR));
-        graphics::draw(ctx, &self.mapmesh, DrawParam::default())?;
+
+        // gets new viewport to find where to position the camera.
+        let player = &self.arena.player;
+        let viewport: Viewport = Viewport::get_viewport(player, ctx);
+        let offset = -viewport.offset;
+
+        // draws everything else.
+        graphics::draw(ctx, &self.mapmesh, DrawParam::default().dest(offset))?;
+
+        let [x, y] = player.position.to_array();
+        let playerrect = ggez::graphics::Rect {x, y, w: player.width, h: player.height};
+        let meshrect = Mesh::new_rectangle(ctx, DrawMode::fill(), playerrect, Color::BLUE).unwrap();
+        graphics::draw(ctx, &meshrect, DrawParam::default().dest(offset))?;
 
         graphics::present(ctx)
     }

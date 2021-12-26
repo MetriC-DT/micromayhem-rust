@@ -45,14 +45,6 @@ pub const VERTICAL_PADDING: usize = 8;
 /// vertical spacing in numbers of vertical blocks of spacing
 pub const VERTICAL_BLOCK_SPACING: usize = 8;
 
-/// represents the entire world of the game (entire map + players).
-
-// total width is (number of blocks horizontally + padding on both sides)
-pub const ARENA_WIDTH: f32 = BLOCK_WIDTH * ((HORIZONTAL_BLOCKS as f32) + 2.0 * (HORIZONTAL_PADDING as f32));
-
-// total height is (number of blocks vertically + padding on both sides)
-pub const ARENA_HEIGHT: f32 = BLOCK_HEIGHT * ((VERTICAL_BLOCKS as f32) + 2.0 * (VERTICAL_PADDING as f32));
-
 /// Type alias to represent all positions occupied by the 8x16
 /// grid of blocks of all types. Used internally.
 type MapBlocksList = [u128; BlockType::COUNT];
