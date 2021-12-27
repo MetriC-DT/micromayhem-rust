@@ -1,4 +1,4 @@
-use crate::weapon::{BasicGun, Weapon};
+use crate::{weapon::Weapon, weaponscatalog::WeaponType};
 use glam::Vec2;
 
 
@@ -14,8 +14,8 @@ pub struct Player {
     pub width: f32,
     pub height: f32,
     pub direction: f32,
-    default_weapon: Box<dyn Weapon>,
-    current_weapon: Box<dyn Weapon>,
+    default_weapon: Weapon,
+    current_weapon: Option<Weapon>,
     team: usize,
     damage_multiplier: f32,
     lives: usize,
@@ -23,8 +23,8 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn get_new_default_weapon(&self) -> Box<dyn Weapon> {
-        self.default_weapon.clone_weapon()
+    pub fn get_new_default_weapon(&self) -> Weapon {
+        self.default_weapon.clone()
     }
 
     /// Updates the position and velocities of the player.
@@ -45,8 +45,10 @@ impl Player {
 
 impl Default for Player {
     fn default() -> Self {
-        let default_weapon = Box::new(BasicGun{});
-        let current_weapon = default_weapon.clone_weapon();
+        let default_position = Vec2::ZERO;
+        let default_direction = 1.0;
+        let default_weapon = Weapon::new(default_position, WeaponType::BasicPistol, default_direction);
+        let current_weapon = default_weapon.clone();
 
         Player {
             position: Vec2::ZERO,
@@ -57,7 +59,7 @@ impl Default for Player {
             height: 10.0,
             direction: 1.0,
             default_weapon,
-            current_weapon,
+            current_weapon: Some(current_weapon),
             team: 0,
             damage_multiplier: 0.0,
             lives: 3,
