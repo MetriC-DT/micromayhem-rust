@@ -19,8 +19,8 @@ pub const ARENA_HEIGHT: f32 = BLOCK_HEIGHT * ((VERTICAL_BLOCKS * VERTICAL_BLOCK_
 #[derive(Debug)]
 pub struct Arena {
     map: Map,
+    pub blockrects: Vec<Vec<BlockRect>>,
     pub player: Player,
-    pub blockrects: Vec<Vec<BlockRect>>
 }
 
 impl Default for Arena {
@@ -38,12 +38,12 @@ impl Arena {
         Self { map, player, blockrects }
     }
 
-    /// Simulates the arena when time dt has passed.
+    /// Simulates the arena when delta time `dt` has passed.
     pub fn update(&mut self, dt: f32) {
         // TODO: calculates the acceleration experienced by the player, with all inputs accounted for.
         //
         // Considers forces from:
-        // gun recoil + weight + block friction + block normal + jump inputs
+        // gun recoil + weight + block friction + block normal + jump inputs + bullet hit.
         self.player.set_acceleration(self.map.get_gravity());
 
         // TODO: find the y-location of the lowest block to plug into the second argument.

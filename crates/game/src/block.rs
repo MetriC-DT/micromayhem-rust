@@ -3,7 +3,7 @@ use strum_macros::{EnumCount, EnumIter};
 use BlockType::*;
 
 /// Width of a block in pixels
-pub const BLOCK_WIDTH: f32 = 128.0;
+pub const BLOCK_WIDTH: f32 = 40.0;
 
 /// Height of a block in pixels
 pub const BLOCK_HEIGHT: f32 = 20.0;
@@ -16,21 +16,27 @@ pub enum BlockType {
     IceBlock,
 }
 
-/// coefficient of frictions for various blocks
-///
-/// Accessing the frictions of a particular block is:
-/// ```
-/// use game::block::BlockType;
-/// use game::block::BLOCK_FRICTIONS;
-/// assert_eq!(BLOCK_FRICTIONS[BlockType::GrassBlock as usize], 1.0);
-/// ```
-pub const BLOCK_FRICTIONS: [f32; BlockType::COUNT] = {
+/// coefficient of frictions for various blocks if you want to access the friction
+/// of a specific blocktype, use the `get_block_friction(blocktype)` function.
+pub(crate) const BLOCK_FRICTIONS: [f32; BlockType::COUNT] = {
     let mut frictions = [0.0; BlockType::COUNT];
 
     frictions[GrassBlock as usize] = 1.0;
     frictions[IceBlock as usize] = 0.5;
     frictions
 };
+
+/// obtains the coefficient of friction of a block with type `blocktype`
+///
+/// ```
+/// use game::block::BlockType;
+/// use game::block::get_block_friction;
+/// assert_eq!(get_block_friction(BlockType::GrassBlock), 1.0);
+/// ```
+pub fn get_block_friction(blocktype: BlockType) -> f32 {
+    let i = blocktype as usize;
+    return BLOCK_FRICTIONS[i];
+}
 
 /// block as a rectangle.
 #[derive(Debug)]

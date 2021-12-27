@@ -73,7 +73,7 @@ impl EventHandler for GameState {
         // gets new viewport to find where to position the camera.
         let player = &self.arena.player;
         let viewport: Viewport = Viewport::get_viewport_on_player(player, ctx);
-        let offset = -viewport.offset;
+        let offset = viewport.get_offset();
 
         // draws everything else.
         graphics::draw(ctx, &self.mapmesh, DrawParam::default().dest(offset))?;

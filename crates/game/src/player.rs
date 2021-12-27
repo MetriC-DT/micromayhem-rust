@@ -15,7 +15,7 @@ pub struct Player {
     pub height: f32,
     pub direction: f32,
     default_weapon: Weapon,
-    current_weapon: Option<Weapon>,
+    current_weapon: Weapon,
     team: usize,
     damage_multiplier: f32,
     lives: usize,
@@ -31,9 +31,22 @@ impl Player {
     ///
     /// max_y is the maximum y unit that the player can move. This is used
     /// when accounting for ground interrupting the player's fall.
+    /// 
+    /// assumes the tick rate is high enough such that the player will always fall
+    /// on the block that is right below. Unsure if this is a valid assumption or not.
+    /// If this is an invalid assumption, the alternative method is to solve for 
+    /// whether the parabola arced by the player's motion will intersect with a line segment
+    /// formed by the platforms that the player will cross. However, this is more computationally
+    /// expensive to compute.
     pub fn update(&mut self, dt: f32, max_y: f32) {
         self.position += self.velocity * dt + 0.5 * self.acceleration * dt * dt;
+
+        // if the player's decent is interrupted, we probably need to recalculate the x coordinate
+        // (solving delta_t from the new y coordinate, and plugging in for delta_x)
+        // for now, I am going to assume negligible difference between the newly calculated
+        // x coordinate and the physical actual x coordinate.
         self.position.y = f32::min(max_y, self.position.y);
+
         self.velocity += self.acceleration * dt;
     }
 
@@ -55,11 +68,11 @@ impl Default for Player {
             velocity: Vec2::ZERO,
             acceleration: Vec2::ZERO,
             name: String::new(),
-            width: 10.0,
-            height: 10.0,
+            width: 30.0,
+            height: 30.0,
             direction: 1.0,
             default_weapon,
-            current_weapon: Some(current_weapon),
+            current_weapon,
             team: 0,
             damage_multiplier: 0.0,
             lives: 3,

@@ -27,7 +27,18 @@ pub const HORIZONTAL_BLOCKS: usize = 16;
 pub const VERTICAL_BLOCKS: usize = 8;
 
 /// bitmask for getting an entire row.
-const ROWMASK: i128 = 1334440654591915542993625911497130241;
+const ROWMASK: i128 = {
+    let mut bitmask = 0;
+    let mut i = 0;
+
+    // for loops not allowed inside a const.
+    while i < HORIZONTAL_BLOCKS {
+        bitmask |= 1 << (i * VERTICAL_BLOCKS);
+        i += 1;
+    }
+
+    bitmask
+};
 
 /// bitmask for getting an entire column.
 const COLMASK: i128 = 1 << VERTICAL_BLOCKS - 1;
