@@ -5,6 +5,4 @@ pub mod player;
 pub mod weapon;
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-}
+mod tests { }

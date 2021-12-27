@@ -1,8 +1,12 @@
 use crate::weapon::{BasicGun, Weapon};
 use glam::Vec2;
 
+
+/// Since the display grid has increasing y for going lower on screen,
+/// the convention will be downward y direction is positive.
 #[derive(Debug)]
 pub struct Player {
+    /// the top left corner of the player.
     pub position: Vec2,
     pub velocity: Vec2,
     pub acceleration: Vec2,
@@ -24,8 +28,6 @@ impl Player {
     }
 
     /// Updates the position and velocities of the player.
-    /// Since the display grid has increasing y for going lower on screen,
-    /// the convention will be downward y direction is positive.
     ///
     /// max_y is the maximum y unit that the player can move. This is used
     /// when accounting for ground interrupting the player's fall.

@@ -3,7 +3,7 @@ use game::{block::BlockType, map::{Map, MapBlocksList}};
 use strum::EnumCount;
 
 #[test]
-fn allow_basic_map_init() {
+fn allow_basic_map_1_init() {
     let a: i128 = 0b0101;
     let b: i128 = 0b1010;
 

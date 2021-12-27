@@ -15,11 +15,9 @@ impl Viewport {
     /// calculates the location of the viewport (where we want the screen to display).
     /// This will be generally centered around the player, unless the player is at a corner or edge
     /// of the map.
-    pub fn get_viewport(player: &Player, ctx: &Context) -> Viewport {
+    pub fn get_viewport_centered_at(point: Vec2, ctx: &Context) -> Viewport {
         let (screen_width, screen_height): (f32, f32) = graphics::size(ctx);
-        let playercenter = player.position + Vec2::new(player.width, player.height) / 2.0;
-
-        let screen_corner = playercenter - Vec2::new(screen_width, screen_height) / 2.0;
+        let screen_corner = point - Vec2::new(screen_width, screen_height) / 2.0;
 
         let topleft = Vec2::ZERO;
         let bottomright_x = f32::max(ARENA_WIDTH - screen_width, 0.0);
@@ -28,5 +26,12 @@ impl Viewport {
 
         let screen_corner = screen_corner.clamp(topleft, bottomright);
         Viewport::new(screen_corner)
+    }
+
+    /// Same as `get_viewport_centered_at(point, &ctx)` function, but centers it on the player
+    /// instead.
+    pub fn get_viewport_on_player(player: &Player, ctx: &Context) -> Viewport {
+        let playercenter = player.position + Vec2::new(player.width, player.height) / 2.0;
+        Viewport::get_viewport_centered_at(playercenter, ctx)
     }
 }

@@ -38,6 +38,7 @@ impl Arena {
         Self { map, player, blockrects }
     }
 
+    /// Simulates the arena when time dt has passed.
     pub fn update(&mut self, dt: f32) {
         // TODO: calculates the acceleration experienced by the player, with all inputs accounted for.
         //
@@ -45,7 +46,9 @@ impl Arena {
         // gun recoil + weight + block friction + block normal + jump inputs
         self.player.set_acceleration(self.map.get_gravity());
 
-        // TODO: find the pixel of the lowest block to plug into the second argument.
+        // TODO: find the y-location of the lowest block to plug into the second argument.
         self.player.update(dt, ARENA_HEIGHT);
+
+        // TODO: Obtains the location of all the other players.
     }
 }
