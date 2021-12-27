@@ -1,6 +1,6 @@
 use std::path::Path;
+use game::{block::BlockType, map::{Map, MapBlocksList}};
 use strum::EnumCount;
-use crate::{map::{Map, MapBlocksList}, block::BlockType};
 
 #[test]
 fn allow_basic_map_init() {
