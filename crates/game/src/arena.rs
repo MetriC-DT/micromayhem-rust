@@ -1,18 +1,22 @@
-use crate::{map::Map, player::{Player, InputMask}, block::{BlockType, BLOCK_HEIGHT, BLOCK_WIDTH, BlockRect}};
-use crate::map::VERTICAL_PADDING;
-use crate::map::VERTICAL_BLOCK_SPACING;
+use crate::map::Map;
+use crate::block::BlockType;
+use crate::block::BlockRect;
+use crate::block::BLOCK_WIDTH;
+use crate::block::BLOCK_HEIGHT;
+use crate::map::{VERTICAL_PADDING, VERTICAL_BLOCK_SPACING};
 use crate::map::VERTICAL_BLOCKS;
 use crate::map::HORIZONTAL_BLOCKS;
 use crate::map::HORIZONTAL_PADDING;
+use crate::player::{Player, InputMask};
 use glam::Vec2;
 
 /// total width in pixels
 /// (number of blocks horizontally + padding on both sides)
-pub const ARENA_WIDTH: f32 = BLOCK_WIDTH * ((HORIZONTAL_BLOCKS as f32) + 2.0 * (HORIZONTAL_PADDING as f32));
+pub const ARENA_WIDTH: f32 = 2.0 * HORIZONTAL_PADDING + BLOCK_WIDTH * HORIZONTAL_BLOCKS as f32;
 
 /// total height in pixels
-/// (number of blocks vertically + padding on both sides)
-pub const ARENA_HEIGHT: f32 = BLOCK_HEIGHT * ((VERTICAL_BLOCKS * VERTICAL_BLOCK_SPACING) as f32 + 2.0 * (VERTICAL_PADDING as f32));
+/// (number of blocks vertically + padding above and below)
+pub const ARENA_HEIGHT: f32 = 2.0 * VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * VERTICAL_BLOCKS as f32;
 
 
 /// represents the entire world of the game (entire map + players).
@@ -42,8 +46,8 @@ impl Arena {
 
     /// returns the top corner x and y coordinates of a block at row and col.
     pub fn get_block_position_at(&self, row: usize, col: usize) -> Vec2 {
-        let y = BLOCK_HEIGHT * (row * VERTICAL_BLOCK_SPACING + VERTICAL_PADDING) as f32;
-        let x = BLOCK_WIDTH * (col + HORIZONTAL_PADDING) as f32;
+        let y = VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * row as f32;
+        let x = HORIZONTAL_PADDING + BLOCK_WIDTH * col as f32;
         Vec2::new(x, y)
     }
 
@@ -56,8 +60,8 @@ impl Arena {
                 let (r, c) = (index % VERTICAL_BLOCKS, index / VERTICAL_BLOCKS);
                 index += 1;
 
-                let x: f32 = BLOCK_WIDTH * (c + HORIZONTAL_PADDING) as f32;
-                let y: f32 = BLOCK_HEIGHT * (r * VERTICAL_BLOCK_SPACING + VERTICAL_PADDING) as f32;
+                let x: f32 = HORIZONTAL_PADDING + BLOCK_WIDTH * c as f32;
+                let y: f32 = VERTICAL_PADDING + r as f32 * VERTICAL_BLOCK_SPACING;
                 let w: f32 = BLOCK_WIDTH;
                 let h: f32 = BLOCK_HEIGHT;
 
@@ -67,6 +71,12 @@ impl Arena {
                     None
                 }
             });
+    }
+
+    /// changes a point in the arena to the nearest row and column as represented by the map. If
+    /// the point is within padding, then returns None.
+    fn to_row_col(point: Vec2) -> Option<(usize, usize)> {
+        return Some((0, 0));
     }
 
     /// Simulates the arena when delta time `dt` has passed.
