@@ -60,7 +60,7 @@ impl Player {
         // (solving delta_t from the new y coordinate, and plugging in for delta_x)
         // for now, I am going to assume negligible difference between the newly calculated
         // x coordinate and the actual physical x coordinate.
-        new_position.y = f32::min(max_y, self.position.y);
+        new_position.y = f32::min(max_y, new_position.y);
         let dx = new_position - self.position;
 
         self.velocity = dx / dt;

@@ -1,10 +1,10 @@
 use game::arena::Arena;
-use game::block::BlockType;
+use game::block::BlockRect;
 use ggez::Context;
 use ggez::event::KeyCode;
 use ggez::input::keyboard;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
-use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam};
+use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam, Rect};
 use glam::Vec2;
 use crate::BACKGROUND_COLOR;
 use crate::utils::Atlas;
@@ -23,17 +23,17 @@ pub struct GameState {
 
 
 /// builds a mapmesh from a given arena.
+///
+/// TODO: Do not want it to crash when an empty map is inputted.
 fn build_mapmesh(arena: &Arena, ctx: &mut Context) -> GameResult<Mesh> {
     let mb = &mut MeshBuilder::new();
     let colors = [Color::BLACK, Color::BLUE];
-    for i in 0..arena.blockrects.len() {
-        let blockrects = &arena.blockrects[i];
-        for rect in blockrects {
-            let r = ggez::graphics::Rect {x: rect.x, y: rect.y, w: rect.w, h: rect.h};
-            mb.rectangle(DrawMode::stroke(2.0), r, colors[i])?;
-        }
-    }
 
+    for blockitem in arena.get_blocks_iter() {
+        let block: BlockRect = blockitem.into();
+        let r = Rect{x: block.x, y: block.y, w: block.w, h: block.h};
+        mb.rectangle(DrawMode::stroke(1.0), r, colors[block.blocktype as usize]).unwrap();
+    }
     mb.build(ctx)
 }
 

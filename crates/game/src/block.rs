@@ -33,3 +33,12 @@ pub(crate) fn get_block_friction(blocktype: BlockType) -> f32 {
     let i = blocktype as usize;
     return BLOCK_FRICTIONS[i];
 }
+
+/// represents a rectangle of the block.
+pub struct BlockRect {
+    pub x: f32,
+    pub y: f32,
+    pub w: f32,
+    pub h: f32,
+    pub blocktype: BlockType,
+}

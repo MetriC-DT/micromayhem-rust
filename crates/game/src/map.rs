@@ -19,10 +19,10 @@ use strum::IntoEnumIterator;
 const INVALID_MAP: &str = "Invalid Map";
 
 /// width of a map in blocks
-pub(crate) const HORIZONTAL_BLOCKS: usize = 16;
+pub const HORIZONTAL_BLOCKS: usize = 16;
 
 /// height of a map in blocks
-pub(crate) const VERTICAL_BLOCKS: usize = 8;
+pub const VERTICAL_BLOCKS: usize = 8;
 
 /// bitmask for getting an entire row.
 const ROWMASK: i128 = {
@@ -136,7 +136,7 @@ impl fmt::Display for Map {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let occupied = self.get_all_occupied();
         write!(f, "{}\nGravity={:?}",
-               occupied.to_string(),
+               occupied,
                self.gravity)
     }
 }

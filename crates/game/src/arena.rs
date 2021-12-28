@@ -1,4 +1,6 @@
-use crate::{map::Map, player::Player, block::{BlockType, BLOCK_HEIGHT, BLOCK_WIDTH}};
+use std::iter::FilterMap;
+
+use crate::{map::Map, player::Player, block::{BlockType, BLOCK_HEIGHT, BLOCK_WIDTH, BlockRect}};
 use crate::map::VERTICAL_PADDING;
 use crate::map::VERTICAL_BLOCK_SPACING;
 use crate::map::VERTICAL_BLOCKS;
@@ -19,7 +21,7 @@ pub const ARENA_HEIGHT: f32 = BLOCK_HEIGHT * ((VERTICAL_BLOCKS * VERTICAL_BLOCK_
 #[derive(Debug)]
 pub struct Arena {
     map: Map,
-    pub blockrects: [Option<BlockType>; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS],
+    pub blocks: [Option<BlockType>; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS],
     pub player: Player,
 }
 
@@ -32,12 +34,33 @@ impl Default for Arena {
 impl Arena {
     pub fn new(map: Map, player: Player) -> Self {
         let blockrects = map.to_blocktypes();
-        Self { map, player, blockrects }
+        Self { map, player, blocks: blockrects }
     }
 
     /// obtains the block type at the specified row and column, or None if it doesn't exist.
     pub fn get_blocktype_at(&self, row: usize, col: usize) -> Option<BlockType> {
-        self.blockrects[col * VERTICAL_BLOCKS + row]
+        self.blocks[col * VERTICAL_BLOCKS + row]
+    }
+
+    /// returns an iterable over the valid blocks.
+    pub fn get_blocks_iter(&self) -> impl Iterator<Item=BlockRect> + '_ {
+        let mut index = 0;
+        return self.blocks.iter()
+            .filter_map(move |blocktypeoption: &Option<BlockType>| {
+                let (r, c) = (index % VERTICAL_BLOCKS, index / VERTICAL_BLOCKS);
+                index += 1;
+
+                let x: f32 = BLOCK_WIDTH * (c + HORIZONTAL_PADDING) as f32;
+                let y: f32 = BLOCK_HEIGHT * (r * VERTICAL_BLOCK_SPACING + VERTICAL_PADDING) as f32;
+                let w: f32 = BLOCK_WIDTH;
+                let h: f32 = BLOCK_HEIGHT;
+
+                if let Some(blocktype) = *blocktypeoption {
+                    Some(BlockRect {x, y, w, h, blocktype})
+                } else {
+                    None
+                }
+            });
     }
 
     /// Simulates the arena when delta time `dt` has passed.
