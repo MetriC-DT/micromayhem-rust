@@ -6,4 +6,4 @@ pub mod weapon;
 pub mod weaponscatalog;
 
 #[cfg(test)]
-mod tests { }
+mod unittests;

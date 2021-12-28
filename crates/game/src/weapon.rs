@@ -20,7 +20,7 @@ pub struct Weapon {
     discarded: bool,
     direction: f32,
     weapontype: WeaponType,
-    mass: f32,
+    pub(crate) mass: f32,
     last_attack_time: u128,
     reload_started_time: u128,
 }

@@ -22,6 +22,16 @@ pub struct Player {
     mass: f32,
 }
 
+pub enum Inputs {
+    Left,
+    Right,
+    Up,
+    Down,
+    Shoot,
+    Bomb,
+    Throw
+}
+
 impl Player {
     pub fn get_new_default_weapon(&self) -> Weapon {
         self.default_weapon.clone()
@@ -38,21 +48,28 @@ impl Player {
     /// whether the parabola arced by the player's motion will intersect with a line segment
     /// formed by the platforms that the player will cross. However, this is more computationally
     /// expensive to compute.
-    pub fn update(&mut self, dt: f32, max_y: f32) {
-        self.position += self.velocity * dt + 0.5 * self.acceleration * dt * dt;
+    pub fn update(&mut self, dt: f32, max_y: f32, force: Vec2) {
+        self.acceleration = force / self.get_total_mass();
 
+        let mut new_position = self.position + self.velocity * dt + 0.5 * self.acceleration * dt * dt;
+
+        // make edits to player's new_position based on obstacles between the original and final
+        // destinations.
+        //
         // if the player's decent is interrupted, we probably need to recalculate the x coordinate
         // (solving delta_t from the new y coordinate, and plugging in for delta_x)
         // for now, I am going to assume negligible difference between the newly calculated
-        // x coordinate and the physical actual x coordinate.
-        self.position.y = f32::min(max_y, self.position.y);
+        // x coordinate and the actual physical x coordinate.
+        new_position.y = f32::min(max_y, self.position.y);
+        let dx = new_position - self.position;
 
-        self.velocity += self.acceleration * dt;
+        self.velocity = dx / dt;
+        self.position = new_position;
     }
 
-    /// used for movement, jump, and firing recoil inputs.
-    pub fn set_acceleration(&mut self, acceleration: Vec2) {
-        self.acceleration = acceleration;
+    /// obtains the total mass of the player (player + current weapon).
+    pub fn get_total_mass(&self) -> f32 {
+        return self.mass + self.current_weapon.mass;
     }
 }
 

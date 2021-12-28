@@ -3,9 +3,6 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
 use crate::block;
-use crate::block::BLOCK_HEIGHT;
-use crate::block::BLOCK_WIDTH;
-use crate::block::BlockRect;
 use crate::block::BlockType;
 use glam::const_vec2;
 use glam::Vec2;
@@ -13,6 +10,7 @@ use bincode::deserialize_from;
 use bincode::serialize_into;
 use serde::{Serialize , Deserialize};
 use strum::EnumCount;
+use strum::IntoEnumIterator;
 
 
 /// Error message for invalid map.
@@ -21,10 +19,10 @@ use strum::EnumCount;
 const INVALID_MAP: &str = "Invalid Map";
 
 /// width of a map in blocks
-pub const HORIZONTAL_BLOCKS: usize = 16;
+pub(crate) const HORIZONTAL_BLOCKS: usize = 16;
 
 /// height of a map in blocks
-pub const VERTICAL_BLOCKS: usize = 8;
+pub(crate) const VERTICAL_BLOCKS: usize = 8;
 
 /// bitmask for getting an entire row.
 const ROWMASK: i128 = {
@@ -43,28 +41,28 @@ const ROWMASK: i128 = {
 /// bitmask for getting an entire column.
 const COLMASK: i128 = 1 << VERTICAL_BLOCKS - 1;
 
-/// default gravity limit
-pub const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, -10.0]);
+/// default gravity limit (positive orientation is downwards).
+pub(crate) const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, 400.0]);
 
 /// horizontal padding of map in number of blocks
 /// This is the region around where player is considered to be alive.
-pub const HORIZONTAL_PADDING: usize = 2;
+pub(crate) const HORIZONTAL_PADDING: usize = 2;
 
 /// vertical padding of map in number of blocks.
 /// This is the region around where player is considered to be alive.
-pub const VERTICAL_PADDING: usize = 8;
+pub(crate) const VERTICAL_PADDING: usize = 8;
 
 /// vertical spacing in numbers of vertical blocks of spacing
-pub const VERTICAL_BLOCK_SPACING: usize = 8;
+pub(crate) const VERTICAL_BLOCK_SPACING: usize = 8;
 
 /// Type alias to represent all positions occupied by the 8x16
 /// grid of blocks of all types. Used internally.
-pub type MapBlocksList = [i128; BlockType::COUNT];
+pub(crate) type MapBlocksList = [i128; BlockType::COUNT];
 
 
 /// Bits used to construct a map.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MapBlocks(MapBlocksList);
+pub(crate) struct MapBlocks(MapBlocksList);
 
 impl From<MapBlocksList> for MapBlocks {
     fn from(lst: MapBlocksList) -> Self {
@@ -83,7 +81,7 @@ impl From<MapBlocksList> for MapBlocks {
 /// 5 13 ... 125
 /// 6 14 ... 126
 /// 7 15 ... 127
-pub struct MapBits(i128);
+pub(crate) struct MapBits(i128);
 
 /// MapBits represented as a string.
 impl fmt::Display for MapBits {
@@ -108,30 +106,6 @@ impl fmt::Display for MapBits {
         }
 
         write!(f, "{}", string_rep)
-    }
-}
-
-
-impl MapBits {
-    /// converts this mapbits to a vector of blockrects.
-    pub fn to_block_rects(&self, blocktype: BlockType) -> Vec<BlockRect> {
-        let mut blockrects = Vec::new();
-        let MapBits(bits) = self;
-
-        for i in 0..HORIZONTAL_BLOCKS {
-            for j in 0..VERTICAL_BLOCKS {
-                let result: i128 = 1 << (j + VERTICAL_BLOCKS * i);
-                if result & bits != 0 {
-                    let x = (i + HORIZONTAL_PADDING) as f32 * BLOCK_WIDTH;
-                    let y = (j * VERTICAL_BLOCK_SPACING + VERTICAL_PADDING) as f32 * BLOCK_HEIGHT;
-                    let w = BLOCK_WIDTH;
-                    let h = BLOCK_HEIGHT;
-                    blockrects.push(BlockRect {x, y, w, h, blocktype});
-                }
-            }
-        }
-
-        blockrects
     }
 }
 
@@ -168,30 +142,35 @@ impl fmt::Display for Map {
 }
 
 impl Default for Map {
-
     /// creates a default map. Used only for testing.
+    ///
+    /// alternates between all of the blocks of all types on each row,
+    /// covering all possible block locations. e.g. row 1 is all grass,
+    /// row 2 is all ice, etc...
     fn default() -> Map {
         let mut data: [i128; BlockType::COUNT] = [0; BlockType::COUNT];
-        data[BlockType::GrassBlock as usize] = -1;
-        let mapblocks: MapBlocks = data.into();
+        for i in 0..VERTICAL_BLOCKS {
+            data[i % BlockType::COUNT] |= ROWMASK << i;
+        }
 
+        let mapblocks: MapBlocks = data.into();
         Map::new(mapblocks, GRAVITY_DEFAULT).unwrap()
     }
 }
 
 impl Map {
     /// Constructs a new map
-    pub fn new(mapblocks: MapBlocks, gravity: Vec2) -> Result<Map, String> {
+    pub(crate) fn new(mapblocks: MapBlocks, gravity: Vec2) -> Result<Map, String> {
         let mapblocks = Map::verify_mapblocks(mapblocks)?;
         Ok(Map { mapblocks, gravity: gravity.to_array() })
     }
 
-    pub fn from_mapblocks(mapblocks: MapBlocks) -> Result<Map, String> {
+    pub(crate) fn from_mapblocks(mapblocks: MapBlocks) -> Result<Map, String> {
         Map::new(mapblocks, GRAVITY_DEFAULT)
     }
 
     /// Constructs a new map from data saved in a file.
-    pub fn read_from_file(filename: &str) -> Result<Map, String> {
+    pub(crate) fn read_from_file(filename: &str) -> Result<Map, String> {
         match File::open(filename) {
             Ok(f) => {
                 let reader = BufReader::new(f);
@@ -204,7 +183,7 @@ impl Map {
         }
     }
 
-    pub fn write_to_file(&self, filename: &str) -> Result<(), std::io::Error> {
+    pub(crate) fn write_to_file(&self, filename: &str) -> Result<(), std::io::Error> {
         let mut f = BufWriter::new(File::create(filename)?);
         match serialize_into(&mut f, &self) {
             Ok(_) => Ok(()),
@@ -239,12 +218,12 @@ impl Map {
     }
 
     /// obtains the gravity associated with the map.
-    pub fn get_gravity(&self) -> Vec2 {
+    pub(crate) fn get_gravity(&self) -> Vec2 {
         self.gravity.into()
     }
 
     /// obtains the locations that are occupied by blocks of specified type
-    pub fn get_bits_of_type(&self, blocktype: block::BlockType) -> MapBits {
+    pub(crate) fn get_bits_of_type(&self, blocktype: block::BlockType) -> MapBits {
         let blockindex = blocktype as usize;
         let MapBlocks(mapblocks) = self.mapblocks;
 
@@ -254,9 +233,23 @@ impl Map {
     }
 
     /// Obtains the locations that are occupied by blocks of any type.
-    pub fn get_all_occupied(&self) -> MapBits {
+    pub(crate) fn get_all_occupied(&self) -> MapBits {
         let MapBlocks(mapblocks) = self.mapblocks;
         let x = mapblocks.iter().fold(0, |acc, x| {acc | x});
         MapBits(x)
+    }
+
+    /// returns a copy of the map as blocktypes array.
+    pub(crate) fn to_blocktypes(&self) -> [Option<BlockType>; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS] {
+        let mut blockrects = [None; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS];
+        for blocktype in BlockType::iter() {
+            let MapBits(bits) = self.get_bits_of_type(blocktype);
+            for i in 0..VERTICAL_BLOCKS * HORIZONTAL_BLOCKS {
+                if (bits & (1 << i)) != 0 {
+                    blockrects[i] = Some(blocktype);
+                }
+            }
+        }
+        blockrects
     }
 }

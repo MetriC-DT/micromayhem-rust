@@ -28,7 +28,7 @@ impl Viewport {
         let bottomright = Vec2::new(bottomright_x, bottomright_y);
 
         screen_corner = screen_corner.clamp(topleft, bottomright);
-        
+
         // centers if screen is taller or wider.
         let screen_is_wider = (screen_width > ARENA_WIDTH) as u8;
         let screen_is_taller = (screen_height > ARENA_HEIGHT) as u8;

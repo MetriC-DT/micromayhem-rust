@@ -1,4 +1,5 @@
 use game::arena::Arena;
+use game::block::BlockType;
 use ggez::Context;
 use ggez::event::KeyCode;
 use ggez::input::keyboard;
@@ -24,10 +25,12 @@ pub struct GameState {
 /// builds a mapmesh from a given arena.
 fn build_mapmesh(arena: &Arena, ctx: &mut Context) -> GameResult<Mesh> {
     let mb = &mut MeshBuilder::new();
-    for blockrects in &arena.blockrects {
+    let colors = [Color::BLACK, Color::BLUE];
+    for i in 0..arena.blockrects.len() {
+        let blockrects = &arena.blockrects[i];
         for rect in blockrects {
             let r = ggez::graphics::Rect {x: rect.x, y: rect.y, w: rect.w, h: rect.h};
-            mb.rectangle(DrawMode::stroke(1.0), r, Color::BLACK)?;
+            mb.rectangle(DrawMode::stroke(2.0), r, colors[i])?;
         }
     }
 
@@ -61,6 +64,8 @@ impl EventHandler for GameState {
             if keyboard::is_key_pressed(ctx, KeyCode::D) {
                 self.arena.player.position += Vec2::new(10.0, 0.0);
             }
+
+            self.arena.update(dt);
         }
 
         Ok(())
