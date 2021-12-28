@@ -75,15 +75,43 @@ impl Arena {
 
     /// changes a point in the arena to the nearest row and column as represented by the map. If
     /// the point is within padding, then returns None.
-    fn to_row_col(point: Vec2) -> Option<(usize, usize)> {
-        return Some((0, 0));
+    ///
+    /// Because this function is meant for assisting in calculating the location of the first block
+    /// below a player's current position, it is more useful to count all positions as "belonging to the
+    /// row below yourself" rather than just being contained within the spacing of the row above.
+    ///
+    /// TODO - write test cases for this function. Tentatively, this works for now.
+    fn to_row_col(point: Vec2) -> Option<(i32, i32)> {
+        let mut col = (point.x - HORIZONTAL_PADDING) / BLOCK_WIDTH;
+
+        // 0.0625 is just a correcting constant to make the player "higher" than he is supposed to
+        //  be. this makes sure we are not neglecting counting if he is standing exactly on a block.
+        let mut row = (point.y - VERTICAL_PADDING - 0.0625) / VERTICAL_BLOCK_SPACING;
+
+        col = col.floor();
+        row = row.floor();
+
+        // added 1 because I want anything below the platform to be registered as being part of the
+        // row below it.
+        let r = i32::max(1 + row as i32, 0);
+        let c = col as i32;
+
+        // manual checking should not be necessary because it is highly unlikely I will ever set
+        // the number of vertical blocks above 8 and horizontal blocks as 16
+        let toplimitvert: i32 = VERTICAL_BLOCKS as i32;
+        let toplimithorz: i32 = HORIZONTAL_BLOCKS as i32;
+
+        if 0 <= r && r < toplimitvert && 0 <= c && c < toplimithorz {
+            Some((r, c))
+        } else {
+            None
+        }
     }
 
     /// Simulates the arena when delta time `dt` has passed.
     pub fn update(&mut self, dt: f32, input: InputMask) {
-
         let total_mass = self.player.get_total_mass();
-        let player_touching_block = true as u8 as f32;
+        let grid_position = Arena::to_row_col(self.player.position);
 
         // TODO: calculates the acceleration experienced by the player, with all variables and
         // inputs accounted for.
@@ -99,7 +127,7 @@ impl Arena {
         let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit;
 
         // TODO: find the y-location of the lowest block to plug into the second argument.
-        self.player.update(dt, ARENA_HEIGHT, total_force);
+        // self.player.update(dt, ARENA_HEIGHT, total_force);
 
         // TODO: Obtains the location of all the other players.
     }

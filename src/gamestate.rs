@@ -6,6 +6,7 @@ use ggez::event::KeyCode;
 use ggez::input::keyboard;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam, Rect};
+use glam::Vec2;
 use crate::BACKGROUND_COLOR;
 use crate::viewport::Viewport;
 use gui::spriteloader::Atlas;
@@ -54,20 +55,25 @@ impl EventHandler for GameState {
             let dt = 1.0 / (DESIRED_FPS as f32);
             let mut inputmask = InputMask::new();
 
+            // TODO - load custom hotkey file so we are not locked to WASD...
             if keyboard::is_key_pressed(ctx, KeyCode::W) {
                 inputmask.add_mask(Input::Up);
+                self.arena.player.position -= Vec2::new(0.0, 10.0);
             }
 
             if keyboard::is_key_pressed(ctx, KeyCode::A) {
                 inputmask.add_mask(Input::Left);
+                self.arena.player.position -= Vec2::new(10.0, 0.0);
             }
 
             if keyboard::is_key_pressed(ctx, KeyCode::S) {
                 inputmask.add_mask(Input::Down);
+                self.arena.player.position += Vec2::new(0.0, 10.0);
             }
 
             if keyboard::is_key_pressed(ctx, KeyCode::D) {
                 inputmask.add_mask(Input::Right);
+                self.arena.player.position += Vec2::new(10.0, 0.0);
             }
 
             self.arena.update(dt, inputmask);
