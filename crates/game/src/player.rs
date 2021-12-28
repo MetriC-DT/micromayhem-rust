@@ -1,6 +1,33 @@
 use crate::{weapon::Weapon, weaponscatalog::WeaponType};
 use glam::Vec2;
 
+pub enum Input {
+    Left,
+    Right,
+    Up,
+    Down,
+    Shoot,
+    Bomb,
+    Throw
+}
+
+#[derive(Debug)]
+pub struct InputMask(u16);
+
+impl InputMask {
+    pub fn new() -> Self {
+        Self(0)
+    }
+
+    pub fn add_mask(&mut self, input: Input) {
+        self.0 |= 1 << input as usize;
+    }
+
+    pub fn has_mask(&self, input: Input) -> bool {
+        (self.0 & (1 << input as usize)) != 0
+    }
+}
+
 
 /// Since the display grid has increasing y for going lower on screen,
 /// the convention will be downward y direction is positive.
@@ -20,16 +47,6 @@ pub struct Player {
     damage_multiplier: f32,
     lives: usize,
     mass: f32,
-}
-
-pub enum Inputs {
-    Left,
-    Right,
-    Up,
-    Down,
-    Shoot,
-    Bomb,
-    Throw
 }
 
 impl Player {
@@ -56,7 +73,7 @@ impl Player {
         // make edits to player's new_position based on obstacles between the original and final
         // destinations.
         //
-        // if the player's decent is interrupted, we probably need to recalculate the x coordinate
+        // if the player's decent is interrupted, we need to recalculate the x coordinate
         // (solving delta_t from the new y coordinate, and plugging in for delta_x)
         // for now, I am going to assume negligible difference between the newly calculated
         // x coordinate and the actual physical x coordinate.

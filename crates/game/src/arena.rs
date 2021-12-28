@@ -1,6 +1,4 @@
-use std::iter::FilterMap;
-
-use crate::{map::Map, player::Player, block::{BlockType, BLOCK_HEIGHT, BLOCK_WIDTH, BlockRect}};
+use crate::{map::Map, player::{Player, InputMask}, block::{BlockType, BLOCK_HEIGHT, BLOCK_WIDTH, BlockRect}};
 use crate::map::VERTICAL_PADDING;
 use crate::map::VERTICAL_BLOCK_SPACING;
 use crate::map::VERTICAL_BLOCKS;
@@ -42,9 +40,17 @@ impl Arena {
         self.blocks[col * VERTICAL_BLOCKS + row]
     }
 
+    /// returns the top corner x and y coordinates of a block at row and col.
+    pub fn get_block_position_at(&self, row: usize, col: usize) -> Vec2 {
+        let y = BLOCK_HEIGHT * (row * VERTICAL_BLOCK_SPACING + VERTICAL_PADDING) as f32;
+        let x = BLOCK_WIDTH * (col + HORIZONTAL_PADDING) as f32;
+        Vec2::new(x, y)
+    }
+
     /// returns an iterable over the valid blocks.
     pub fn get_blocks_iter(&self) -> impl Iterator<Item=BlockRect> + '_ {
         let mut index = 0;
+
         return self.blocks.iter()
             .filter_map(move |blocktypeoption: &Option<BlockType>| {
                 let (r, c) = (index % VERTICAL_BLOCKS, index / VERTICAL_BLOCKS);
@@ -64,7 +70,7 @@ impl Arena {
     }
 
     /// Simulates the arena when delta time `dt` has passed.
-    pub fn update(&mut self, dt: f32) {
+    pub fn update(&mut self, dt: f32, input: InputMask) {
 
         let total_mass = self.player.get_total_mass();
         let player_touching_block = true as u8 as f32;

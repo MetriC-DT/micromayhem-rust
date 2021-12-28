@@ -1,11 +1,11 @@
 use game::arena::Arena;
 use game::block::BlockRect;
+use game::player::{InputMask, Input};
 use ggez::Context;
 use ggez::event::KeyCode;
 use ggez::input::keyboard;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam, Rect};
-use glam::Vec2;
 use crate::BACKGROUND_COLOR;
 use crate::utils::Atlas;
 use crate::viewport::Viewport;
@@ -52,20 +52,25 @@ impl EventHandler for GameState {
         // frame fitting in the time since the last update.
         while timer::check_update_time(ctx, DESIRED_FPS) {
             let dt = 1.0 / (DESIRED_FPS as f32);
+            let mut inputmask = InputMask::new();
+
             if keyboard::is_key_pressed(ctx, KeyCode::W) {
-                self.arena.player.position -= Vec2::new(0.0, 10.0);
-            }
-            if keyboard::is_key_pressed(ctx, KeyCode::A) {
-                self.arena.player.position -= Vec2::new(10.0, 0.0);
-            }
-            if keyboard::is_key_pressed(ctx, KeyCode::S) {
-                self.arena.player.position += Vec2::new(0.0, 10.0);
-            }
-            if keyboard::is_key_pressed(ctx, KeyCode::D) {
-                self.arena.player.position += Vec2::new(10.0, 0.0);
+                inputmask.add_mask(Input::Up);
             }
 
-            self.arena.update(dt);
+            if keyboard::is_key_pressed(ctx, KeyCode::A) {
+                inputmask.add_mask(Input::Left);
+            }
+
+            if keyboard::is_key_pressed(ctx, KeyCode::S) {
+                inputmask.add_mask(Input::Down);
+            }
+
+            if keyboard::is_key_pressed(ctx, KeyCode::D) {
+                inputmask.add_mask(Input::Right);
+            }
+
+            self.arena.update(dt, inputmask);
         }
 
         Ok(())
