@@ -122,4 +122,20 @@ mod tests {
         let blocktype = map.to_blocktypes()[col * VERTICAL_BLOCKS + row].unwrap();
         assert_eq!(BlockType::IceBlock as usize, blocktype as usize);
     }
+
+    #[test]
+    fn test_first_row_below() {
+        let grassbits: i128 = 0b000000001;
+        let icebits: i128 = 0b000100000;
+        let mut data: [i128; BlockType::COUNT] = [0; BlockType::COUNT];
+        data[BlockType::GrassBlock as usize] = grassbits;
+        data[BlockType::IceBlock as usize] = icebits;
+        let map = Map::from_mapblocks(data.into()).unwrap();
+
+        assert_eq!(map.first_row_below(1, 0), 5);
+        assert_eq!(map.first_row_below(0, 0), 0);
+        assert_eq!(map.first_row_below(2, 0), 5);
+        assert_eq!(map.first_row_below(6, 0), 128);
+        assert_eq!(map.first_row_below(0, 1), 128);
+    }
 }

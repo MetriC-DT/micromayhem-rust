@@ -39,7 +39,7 @@ const ROWMASK: i128 = {
 };
 
 /// bitmask for getting an entire column.
-const COLMASK: i128 = 1 << VERTICAL_BLOCKS - 1;
+const COLMASK: i128 = (1 << VERTICAL_BLOCKS) - 1;
 
 /// default gravity limit (positive orientation is downwards).
 pub(crate) const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, 400.0]);
@@ -251,5 +251,15 @@ impl Map {
             }
         }
         blockrects
+    }
+
+    /// returns the index of the first row below the point defined by row and col
+    pub(crate) fn first_row_below(&self, row: usize, col: usize) -> u32 {
+        let rows_below_mask = (-1) ^ ((1 << row) - 1);
+        let mask = (COLMASK & rows_below_mask) << (col * VERTICAL_BLOCKS);
+        let occupied_bits = self.get_all_occupied().0;
+
+        let column: i128 = (occupied_bits & mask) >> (col * VERTICAL_BLOCKS);
+        i128::trailing_zeros(column)
     }
 }
