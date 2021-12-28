@@ -42,7 +42,7 @@ const ROWMASK: i128 = {
 const COLMASK: i128 = (1 << VERTICAL_BLOCKS) - 1;
 
 /// default gravity limit (positive orientation is downwards).
-pub(crate) const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, 400.0]);
+pub(crate) const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, 1000.0]);
 
 /// horizontal padding of map in number of blocks
 /// This is the region around where player is considered to be alive.
@@ -87,7 +87,7 @@ pub(crate) struct MapBits(i128);
 impl fmt::Display for MapBits {
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let MapBits(bits) = self;
+        let bits = self.0;
 
         let mut string_rep = String::new();
         for i in 0..VERTICAL_BLOCKS {
@@ -253,7 +253,9 @@ impl Map {
         blockrects
     }
 
-    /// returns the index of the first row below the point defined by row and col
+    /// returns the index of the first row containing a block
+    /// below the point defined by row and col. if there is no block, then returns
+    /// a number greater than VERTICAL_BLOCKS.
     pub(crate) fn first_row_below(&self, row: usize, col: usize) -> u32 {
         let rows_below_mask = (-1) ^ ((1 << row) - 1);
         let mask = (COLMASK & rows_below_mask) << (col * VERTICAL_BLOCKS);
