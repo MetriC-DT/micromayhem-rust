@@ -7,8 +7,8 @@ use ggez::input::keyboard;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam, Rect};
 use crate::BACKGROUND_COLOR;
-use crate::utils::Atlas;
 use crate::viewport::Viewport;
+use gui::spriteloader::Atlas;
 
 
 // the ticks per second for the physics simulation.

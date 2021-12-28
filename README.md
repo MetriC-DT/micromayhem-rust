@@ -6,7 +6,7 @@ Gun down your opponents from the platform, and avoid getting shot down yourself.
 
 ## Explanation of File Hierarchy
 - `resources` - resources for the project, such as fonts, spritesheets, images, etc.
-- `src` - main entry point of the program
+- `src` - main entry point of the program, most of the graphics drawing.
 - `crates/game` - Game components, logic, and physics
 - `crates/gui` - GUI elements, sprite loader
 - `crates/network` - Netcode for client and server

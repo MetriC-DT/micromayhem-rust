@@ -1019,6 +1019,9 @@ name = "gui"
 version = "0.1.0"
 dependencies = [
  "ggez",
+ "glam",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1336,8 +1339,6 @@ dependencies = [
  "glam",
  "gui",
  "network",
- "serde",
- "serde_json",
 ]
 
 [[package]]

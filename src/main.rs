@@ -1,9 +1,9 @@
 use std::{path::{self, Path}, env};
 use game::arena::Arena;
 use ggez::{GameResult, ContextBuilder, event};
+use gui::spriteloader::Atlas;
 
 use micromayhem::gamestate::GameState;
-use micromayhem::utils::Atlas;
 use micromayhem::configuration;
 use micromayhem::{RESOURCES, AUTHOR, GAME_TITLE, SPRITE_JSON};
 
