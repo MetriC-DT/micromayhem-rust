@@ -165,7 +165,7 @@ impl Arena {
                 self.player.velocity.x = self.player.velocity.x * velocity_x_unit.abs();
 
                 // we are already on a block, so the blocktype should not be None
-                let blocktype = self.get_blocktype_at(row, col).unwrap();
+                let blocktype = self.get_blocktype_at(row, col).expect("BlockType should not be None");
 
                 let coeff_friction = block::get_block_friction(blocktype);
                 block_friction = -coeff_friction * block_normal.length() * Vec2::new(velocity_x_unit, 0.0);
@@ -175,6 +175,9 @@ impl Arena {
                 let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
                 let has_right = input.has_mask(Input::Right) as u8 as f32;
                 jump = total_mass * JUMP_ACCEL * has_jump;
+
+                // TODO - run might have to be implemented as a velocity to prevent the awkward
+                // acceleration control of running left and right.
                 run = total_mass * (has_left + has_right) * RUN_ACCEL;
 
                 // can only drop down if we are standing on block.
@@ -184,7 +187,7 @@ impl Arena {
 
         let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
 
-        // TODO: find the y-location of the lowest block to plug into the second argument.
+        // updates the player after calculating the applied forces above.
         self.player.update(dt, lowest_block_y, total_force, drop_input);
 
         // TODO: Obtains the location of all the other players.
