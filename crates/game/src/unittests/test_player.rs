@@ -21,3 +21,33 @@ fn test_inputmask_mask() {
     assert!(inputmask.has_mask(Input::Up));
     assert!(!inputmask.has_mask(Input::Down));
 }
+
+#[test]
+fn test_inputmask_double() {
+    let mut inputmask = InputMask::new();
+
+    inputmask.add_mask(Input::Up);
+    inputmask.add_mask(Input::Up);
+
+    assert!(inputmask.has_mask(Input::Up));
+    assert!(!inputmask.has_mask(Input::Down));
+}
+
+#[test]
+fn test_inputmask_remove() {
+    let mut inputmask = InputMask::new();
+
+    inputmask.add_mask(Input::Up);
+    assert!(inputmask.has_mask(Input::Up));
+
+    inputmask.remove_mask(Input::Up);
+    assert!(!inputmask.has_mask(Input::Up));
+}
+
+#[test]
+fn test_inputmask_double_remove() {
+    let mut inputmask = InputMask::new();
+    inputmask.remove_mask(Input::Up);
+
+    assert!(!inputmask.has_mask(Input::Up));
+}

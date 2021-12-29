@@ -8,6 +8,9 @@ use crate::map::{VERTICAL_PADDING, VERTICAL_BLOCK_SPACING};
 use crate::map::VERTICAL_BLOCKS;
 use crate::map::HORIZONTAL_BLOCKS;
 use crate::map::HORIZONTAL_PADDING;
+use crate::player::Input;
+use crate::player::JUMP_ACCEL;
+use crate::player::RUN_ACCEL;
 use crate::player::{Player, InputMask};
 use glam::Vec2;
 
@@ -139,6 +142,9 @@ impl Arena {
         let mut block_normal = Vec2::ZERO;
         let mut gun_recoil = Vec2::ZERO;
         let mut bullet_hit = Vec2::ZERO;
+        let mut jump = Vec2::ZERO;
+        let mut run = Vec2::ZERO;
+        let mut drop_input = false;
 
         let first_rowcol_below_opt = self.find_first_rowcol_below(&left_grid_position, &right_grid_position);
 
@@ -147,19 +153,34 @@ impl Arena {
             let standing_on_block = player_bottom.y == lowest_block_y;
 
             if standing_on_block {
-                let blocktype = self.get_blocktype_at(row, col);
-                let coeff_friction = block::get_block_friction(blocktype.unwrap());
+                // sets player's velocity y component to zero.
+                self.player.velocity.y = 0.0;
+
+                // obtains the normal force
                 block_normal = -weight;
 
+                // obtains the frictional force.
                 let velocity_x = self.player.velocity.normalize_or_zero().x;
+                let blocktype = self.get_blocktype_at(row, col);
+                let coeff_friction = block::get_block_friction(blocktype.unwrap());
                 block_friction = -block_normal.length() * coeff_friction * Vec2::new(velocity_x, 0.0);
+
+                // obtains the forces from player's inputs.
+                let has_jump = input.has_mask(Input::Up) as u8 as f32;
+                let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
+                let has_right = input.has_mask(Input::Right) as u8 as f32;
+                jump = total_mass * JUMP_ACCEL * has_jump;
+                run = total_mass * (has_left + has_right) * RUN_ACCEL;
+
+                // can only drop down if we are standing on block.
+                drop_input = input.has_mask(Input::Down);
             }
         }
 
-        let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit;
+        let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
 
         // TODO: find the y-location of the lowest block to plug into the second argument.
-        self.player.update(dt, lowest_block_y, total_force);
+        self.player.update(dt, lowest_block_y, total_force, drop_input);
 
         // TODO: Obtains the location of all the other players.
     }

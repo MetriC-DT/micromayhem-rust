@@ -1,5 +1,5 @@
-use crate::{weapon::Weapon, weaponscatalog::WeaponType};
-use glam::Vec2;
+use crate::{weapon::Weapon, weaponscatalog::WeaponType, arena::ARENA_WIDTH};
+use glam::{Vec2, const_vec2};
 
 pub enum Input {
     Left,
@@ -31,6 +31,10 @@ impl InputMask {
         self.0 &= !(1 << input as usize)
     }
 }
+
+/// acceleration for jumping.
+pub(crate) const JUMP_ACCEL: Vec2 = const_vec2!([0.0, -70000.0]);
+pub(crate) const RUN_ACCEL: Vec2 = const_vec2!([3000.0, 0.0]);
 
 
 /// Since the display grid has increasing y for going lower on screen,
@@ -69,7 +73,7 @@ impl Player {
     /// whether the parabola arced by the player's motion will intersect with a line segment
     /// formed by the platforms that the player will cross. However, this is more computationally
     /// expensive to compute.
-    pub fn update(&mut self, dt: f32, max_y: f32, force: Vec2) {
+    pub fn update(&mut self, dt: f32, max_y: f32, force: Vec2, drop_input: bool) {
         self.acceleration = force / self.get_total_mass();
 
         let mut new_position = self.position + self.velocity * dt + 0.5 * self.acceleration * dt * dt;
@@ -81,7 +85,8 @@ impl Player {
         // (solving delta_t from the new y coordinate, and plugging in for delta_x)
         // for now, I am going to assume negligible difference between the newly calculated
         // x coordinate and the actual physical x coordinate.
-        new_position.y = f32::min(max_y - self.height, new_position.y);
+        let drop_height = drop_input as u8 as f32 * 1.0;
+        new_position.y = f32::min(max_y - self.height, new_position.y) + drop_height;
         let dx = new_position - self.position;
 
         self.velocity = dx / dt;
@@ -96,13 +101,14 @@ impl Player {
 
 impl Default for Player {
     fn default() -> Self {
-        let default_position = Vec2::ZERO;
+        let midmap = ARENA_WIDTH / 2.0;
+        let default_position = Vec2::new(midmap, 0.0);
         let default_direction = 1.0;
         let default_weapon = Weapon::new(default_position, WeaponType::BasicPistol, default_direction);
         let current_weapon = default_weapon.clone();
 
         Player {
-            position: Vec2::ZERO,
+            position: default_position,
             velocity: Vec2::ZERO,
             acceleration: Vec2::ZERO,
             name: String::new(),

@@ -43,7 +43,7 @@ const ROWMASK: i128 = {
 const COLMASK: i128 = (1 << VERTICAL_BLOCKS) - 1;
 
 /// default gravity limit (positive orientation is downwards).
-pub(crate) const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, 1000.0]);
+pub(crate) const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, 3000.0]);
 
 /// horizontal padding of map in number of blocks
 /// This is the region around where player is considered to be alive.

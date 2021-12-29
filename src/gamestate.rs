@@ -54,24 +54,6 @@ impl EventHandler for GameState {
         // If the update is early, there will be no cycles, otherwises, the logic will run once for each
         // frame fitting in the time since the last update.
         while timer::check_update_time(ctx, DESIRED_FPS) {
-            // TODO - load custom hotkey file so we are not locked to WASD...
-            if input::keyboard::is_key_pressed(ctx, KeyCode::W) {
-                self.inputmask.add_mask(Input::Up);
-                self.arena.player.position -= Vec2::new(0.0, 10.0);
-            }
-            if input::keyboard::is_key_pressed(ctx, KeyCode::A) {
-                self.inputmask.add_mask(Input::Left);
-                self.arena.player.position -= Vec2::new(10.0, 0.0);
-            }
-            if input::keyboard::is_key_pressed(ctx, KeyCode::S) {
-                self.inputmask.add_mask(Input::Down);
-                self.arena.player.position += Vec2::new(0.0, 10.0);
-            }
-            if input::keyboard::is_key_pressed(ctx, KeyCode::D) {
-                self.inputmask.add_mask(Input::Right);
-                self.arena.player.position += Vec2::new(10.0, 0.0);
-            }
-
             self.arena.update(DT, &self.inputmask);
         }
 
@@ -98,7 +80,24 @@ impl EventHandler for GameState {
         graphics::present(ctx)
     }
 
-    fn key_down_event(&mut self, _ctx: &mut Context, _keycode: KeyCode, _keymods: ggez::event::KeyMods, _repeat: bool) {
-        // overridden in order to prevent Esc closing the game.
+    fn key_down_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymods: ggez::event::KeyMods, _repeat: bool) {
+        // TODO - load custom hotkey file so we are not locked to WASD...
+        match keycode {
+            KeyCode::W => self.inputmask.add_mask(Input::Up),
+            KeyCode::A => self.inputmask.add_mask(Input::Left),
+            KeyCode::S => self.inputmask.add_mask(Input::Down),
+            KeyCode::D => self.inputmask.add_mask(Input::Right),
+            _ => ()
+        }
+    }
+
+    fn key_up_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymods: ggez::event::KeyMods) {
+        match keycode {
+            KeyCode::W => self.inputmask.remove_mask(Input::Up),
+            KeyCode::A => self.inputmask.remove_mask(Input::Left),
+            KeyCode::S => self.inputmask.remove_mask(Input::Down),
+            KeyCode::D => self.inputmask.remove_mask(Input::Right),
+            _ => ()
+        }
     }
 }
