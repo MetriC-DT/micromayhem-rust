@@ -1,3 +1,4 @@
+use crate::block;
 use crate::map::Map;
 use crate::block::BlockType;
 use crate::block::BlockRect;
@@ -35,8 +36,9 @@ impl Default for Arena {
 
 impl Arena {
     pub fn new(map: Map, player: Player) -> Self {
-        let blockrects = map.to_blocktypes();
-        Self { map, player, blocks: blockrects }
+        let blocks = map.to_blocktypes();
+        let inputs = InputMask::new();
+        Self { map, player, blocks }
     }
 
     /// obtains the block type at the specified row and column, or None if it doesn't exist.
@@ -46,9 +48,19 @@ impl Arena {
 
     /// returns the top corner x and y coordinates of a block at row and col.
     pub fn get_block_position_at(&self, row: usize, col: usize) -> Vec2 {
-        let y = VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * row as f32;
-        let x = HORIZONTAL_PADDING + BLOCK_WIDTH * col as f32;
+        let y = Arena::get_block_row_position(row);
+        let x = Arena::get_block_col_position(col);
         Vec2::new(x, y)
+    }
+
+    /// obtains the position of the row as f32.
+    pub fn get_block_row_position(row: usize) -> f32 {
+        VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * row as f32
+    }
+
+    /// obtains the position of the col as f32.
+    pub fn get_block_col_position(col: usize) -> f32 {
+        HORIZONTAL_PADDING + BLOCK_WIDTH * col as f32
     }
 
     /// returns an iterable over the valid blocks.
@@ -81,11 +93,11 @@ impl Arena {
     /// row below yourself" rather than just being contained within the spacing of the row above.
     ///
     /// TODO - write test cases for this function. Tentatively, this works for now.
-    fn to_row_col(point: Vec2) -> Option<(i32, i32)> {
+    fn to_row_col(point: Vec2) -> Option<(usize, usize)> {
         let mut col = (point.x - HORIZONTAL_PADDING) / BLOCK_WIDTH;
 
-        // 0.0625 is just a correcting constant to make the player "higher" than he is supposed to
-        //  be. this makes sure we are not neglecting counting if he is standing exactly on a block.
+        // 0.0625 is just a correcting constant to make the player "higher" than it is supposed to
+        // be. this makes sure we are not neglecting counting if he is standing exactly on a block.
         let mut row = (point.y - VERTICAL_PADDING - 0.0625) / VERTICAL_BLOCK_SPACING;
 
         col = col.floor();
@@ -101,34 +113,99 @@ impl Arena {
         let toplimitvert: i32 = VERTICAL_BLOCKS as i32;
         let toplimithorz: i32 = HORIZONTAL_BLOCKS as i32;
 
+        // since r and c are both guaranteed to be >= 0, we can just return it as a usize.
         if 0 <= r && r < toplimitvert && 0 <= c && c < toplimithorz {
-            Some((r, c))
+            Some((r as usize, c as usize))
         } else {
             None
         }
     }
 
     /// Simulates the arena when delta time `dt` has passed.
-    pub fn update(&mut self, dt: f32, input: InputMask) {
+    pub fn update(&mut self, dt: f32, input: &InputMask) {
         let total_mass = self.player.get_total_mass();
-        let grid_position = Arena::to_row_col(self.player.position);
+        let player_bottom = self.player.position + Vec2::new(0.0, self.player.height);
+        let left_grid_position = Arena::to_row_col(player_bottom);
+        let right_grid_position = Arena::to_row_col(player_bottom + Vec2::new(self.player.width, 0.0));
 
         // TODO: calculates the acceleration experienced by the player, with all variables and
         // inputs accounted for.
         //
         // Considers forces from:
-        // weight + gun recoil + block friction + block normal + WASD inputs + bullet hit.
+        // weight + gun recoil + block friction + block normal + bullet hit + WASD inputs.
         let weight = self.map.get_gravity() * total_mass;
-        let gun_recoil = Vec2::ZERO;
-        let block_friction = Vec2::ZERO;
-        let block_normal = Vec2::ZERO;
-        let bullet_hit = Vec2::ZERO;
+        let mut lowest_block_y: f32 = ARENA_HEIGHT + self.player.height;
+        let mut block_friction = Vec2::ZERO;
+        let mut block_normal = Vec2::ZERO;
+        let mut gun_recoil = Vec2::ZERO;
+        let mut bullet_hit = Vec2::ZERO;
+
+        let first_rowcol_below_opt = self.find_first_rowcol_below(&left_grid_position, &right_grid_position);
+
+        if let Some((row, col)) = first_rowcol_below_opt {
+            lowest_block_y = Arena::get_block_row_position(row);
+            let standing_on_block = player_bottom.y == lowest_block_y;
+
+            if standing_on_block {
+                let blocktype = self.get_blocktype_at(row, col);
+                let coeff_friction = block::get_block_friction(blocktype.unwrap());
+                block_normal = -weight;
+
+                let velocity_x = self.player.velocity.normalize_or_zero().x;
+                block_friction = -block_normal.length() * coeff_friction * Vec2::new(velocity_x, 0.0);
+            }
+        }
 
         let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit;
 
         // TODO: find the y-location of the lowest block to plug into the second argument.
-        // self.player.update(dt, ARENA_HEIGHT, total_force);
+        self.player.update(dt, lowest_block_y, total_force);
 
         // TODO: Obtains the location of all the other players.
+    }
+
+    /// returns the first (row, col) that has a block below the current player. If no such block exists,
+    /// then returns None for the first argument. Bool represents whether the left or right edge
+    /// of the player found the first block.
+    fn find_first_rowcol_below(&self,
+                            left_grid_position: &Option<(usize, usize)>,
+                            right_grid_position: &Option<(usize, usize)>) -> Option<(usize, usize)> {
+
+        let l_rowbelow_option: Option<usize>;
+        let r_rowbelow_option: Option<usize>;
+        let mut leftcol: usize = 0;
+        let mut rightcol: usize = 0;
+
+        if let Some((l_row, l_col)) = left_grid_position {
+            l_rowbelow_option = self.map.first_row_below(*l_row, *l_col);
+            leftcol = *l_col;
+        } else {
+            l_rowbelow_option = None;
+        }
+
+        if let Some((r_row, r_col)) = right_grid_position {
+            r_rowbelow_option = self.map.first_row_below(*r_row, *r_col);
+            rightcol = *r_col;
+        } else {
+            r_rowbelow_option = None;
+        }
+
+        // checks whether the first row column pair is from the left edge or right. Chooses
+        // whichever one is smaller.
+        match (l_rowbelow_option, r_rowbelow_option) {
+            (None, None) => None,
+
+            (None, Some(row)) => Some((row, rightcol)),
+
+            (Some(row), None) => Some((row, leftcol)),
+
+            (Some(l_row), Some(r_row)) => {
+                if r_row < l_row {
+                    Some((r_row, rightcol))
+                } else {
+                    Some((l_row, leftcol))
+                }
+            }
+        }
     }
 }

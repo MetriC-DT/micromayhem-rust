@@ -1,9 +1,8 @@
 use game::arena::Arena;
 use game::block::BlockRect;
 use game::player::{InputMask, Input};
-use ggez::Context;
+use ggez::{Context, input};
 use ggez::event::KeyCode;
-use ggez::input::keyboard;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam, Rect};
 use glam::Vec2;
@@ -14,12 +13,14 @@ use gui::spriteloader::Atlas;
 
 // the ticks per second for the physics simulation.
 const DESIRED_FPS: u32 = 60;
+const DT: f32 = 1.0 / DESIRED_FPS as f32;
 
 #[derive(Debug)]
 pub struct GameState {
     arena: Arena,
     mapmesh: Mesh,
     atlas: Atlas,
+    inputmask: InputMask,
 }
 
 
@@ -41,7 +42,8 @@ fn build_mapmesh(arena: &Arena, ctx: &mut Context) -> GameResult<Mesh> {
 impl GameState {
     pub fn new(arena: Arena, ctx: &mut Context, atlas: Atlas) -> GameState {
         let mapmesh = build_mapmesh(&arena, ctx).unwrap();
-        GameState {arena, mapmesh, atlas}
+        let inputmask = InputMask::new();
+        GameState {arena, mapmesh, atlas, inputmask}
     }
 }
 
@@ -52,31 +54,25 @@ impl EventHandler for GameState {
         // If the update is early, there will be no cycles, otherwises, the logic will run once for each
         // frame fitting in the time since the last update.
         while timer::check_update_time(ctx, DESIRED_FPS) {
-            let dt = 1.0 / (DESIRED_FPS as f32);
-            let mut inputmask = InputMask::new();
-
             // TODO - load custom hotkey file so we are not locked to WASD...
-            if keyboard::is_key_pressed(ctx, KeyCode::W) {
-                inputmask.add_mask(Input::Up);
+            if input::keyboard::is_key_pressed(ctx, KeyCode::W) {
+                self.inputmask.add_mask(Input::Up);
                 self.arena.player.position -= Vec2::new(0.0, 10.0);
             }
-
-            if keyboard::is_key_pressed(ctx, KeyCode::A) {
-                inputmask.add_mask(Input::Left);
+            if input::keyboard::is_key_pressed(ctx, KeyCode::A) {
+                self.inputmask.add_mask(Input::Left);
                 self.arena.player.position -= Vec2::new(10.0, 0.0);
             }
-
-            if keyboard::is_key_pressed(ctx, KeyCode::S) {
-                inputmask.add_mask(Input::Down);
+            if input::keyboard::is_key_pressed(ctx, KeyCode::S) {
+                self.inputmask.add_mask(Input::Down);
                 self.arena.player.position += Vec2::new(0.0, 10.0);
             }
-
-            if keyboard::is_key_pressed(ctx, KeyCode::D) {
-                inputmask.add_mask(Input::Right);
+            if input::keyboard::is_key_pressed(ctx, KeyCode::D) {
+                self.inputmask.add_mask(Input::Right);
                 self.arena.player.position += Vec2::new(10.0, 0.0);
             }
 
-            self.arena.update(dt, inputmask);
+            self.arena.update(DT, &self.inputmask);
         }
 
         Ok(())
@@ -100,5 +96,9 @@ impl EventHandler for GameState {
         graphics::draw(ctx, &meshrect, DrawParam::default().dest(offset))?;
 
         graphics::present(ctx)
+    }
+
+    fn key_down_event(&mut self, _ctx: &mut Context, _keycode: KeyCode, _keymods: ggez::event::KeyMods, _repeat: bool) {
+        // overridden in order to prevent Esc closing the game.
     }
 }

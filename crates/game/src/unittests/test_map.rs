@@ -132,10 +132,10 @@ mod tests {
         data[BlockType::IceBlock as usize] = icebits;
         let map = Map::from_mapblocks(data.into()).unwrap();
 
-        assert_eq!(map.first_row_below(1, 0), 5);
-        assert_eq!(map.first_row_below(0, 0), 0);
-        assert_eq!(map.first_row_below(2, 0), 5);
-        assert_eq!(map.first_row_below(6, 0), 128);
-        assert_eq!(map.first_row_below(0, 1), 128);
+        assert_eq!(map.first_row_below(1, 0), Some(5));
+        assert_eq!(map.first_row_below(0, 0), Some(0));
+        assert_eq!(map.first_row_below(2, 0), Some(5));
+        assert_eq!(map.first_row_below(6, 0), None);
+        assert_eq!(map.first_row_below(0, 1), None);
     }
 }

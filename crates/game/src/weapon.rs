@@ -63,7 +63,10 @@ impl Weapon {
 
     /// calls the specific attack function for a weapon of `self.weapontype` only if the
     /// attack has passed the attack cooldown timer, and the gun already reloaded.
-    pub fn attack(&mut self) {
+    ///
+    /// If the attack was successfully executed, then attack returns true, otherwise, 
+    /// it will return false. Successful execution means attack is not on cooldown or reloaded.
+    pub fn attack(&mut self) -> bool {
         let i = self.weapontype as usize;
 
         let currtime = SystemTime::now()
@@ -77,6 +80,9 @@ impl Weapon {
         if reloaded_check && attack_cooldown_check {
             self.last_attack_time = currtime;
             ATTACK_FUNCTIONS[i](self);
+            return true;
+        } else {
+            return false;
         }
     }
 

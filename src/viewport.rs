@@ -30,10 +30,10 @@ impl Viewport {
         screen_corner = screen_corner.clamp(topleft, bottomright);
 
         // centers if screen is taller or wider.
-        let screen_is_wider = (screen_width > ARENA_WIDTH) as u8;
-        let screen_is_taller = (screen_height > ARENA_HEIGHT) as u8;
-        let centervector_x = (screen_is_wider as f32) * (screen_width - ARENA_WIDTH) / 2.0;
-        let centervector_y = (screen_is_taller as f32) * (screen_height - ARENA_HEIGHT) / 2.0;
+        let screen_is_wider = (screen_width > ARENA_WIDTH) as u8 as f32;
+        let screen_is_taller = (screen_height > ARENA_HEIGHT) as u8 as f32;
+        let centervector_x = screen_is_wider * (screen_width - ARENA_WIDTH) / 2.0;
+        let centervector_y = screen_is_taller * (screen_height - ARENA_HEIGHT) / 2.0;
         screen_corner -= Vec2::new(centervector_x, centervector_y);
 
         Viewport::new(screen_corner)

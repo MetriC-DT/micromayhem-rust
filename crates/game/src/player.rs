@@ -26,6 +26,10 @@ impl InputMask {
     pub fn has_mask(&self, input: Input) -> bool {
         (self.0 & (1 << input as usize)) != 0
     }
+
+    pub fn remove_mask(&mut self, input: Input) {
+        self.0 &= !(1 << input as usize)
+    }
 }
 
 
@@ -56,7 +60,7 @@ impl Player {
 
     /// Updates the position and velocities of the player.
     ///
-    /// max_y is the maximum y unit that the player can move. This is used
+    /// max_y is the maximum y unit that the player can drop down to. This is used
     /// when accounting for ground interrupting the player's fall.
     /// 
     /// assumes the tick rate is high enough such that the player will always fall
@@ -77,7 +81,7 @@ impl Player {
         // (solving delta_t from the new y coordinate, and plugging in for delta_x)
         // for now, I am going to assume negligible difference between the newly calculated
         // x coordinate and the actual physical x coordinate.
-        new_position.y = f32::min(max_y, new_position.y);
+        new_position.y = f32::min(max_y - self.height, new_position.y);
         let dx = new_position - self.position;
 
         self.velocity = dx / dt;
