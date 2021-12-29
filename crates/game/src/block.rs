@@ -24,7 +24,7 @@ pub(crate) const BLOCK_FRICTIONS: [f32; BlockType::COUNT] = {
     let mut frictions = [0.0; BlockType::COUNT];
 
     frictions[GrassBlock as usize] = 0.7;
-    frictions[IceBlock as usize] = 0.5;
+    frictions[IceBlock as usize] = 0.4;
     frictions
 };
 

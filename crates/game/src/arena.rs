@@ -40,7 +40,6 @@ impl Default for Arena {
 impl Arena {
     pub fn new(map: Map, player: Player) -> Self {
         let blocks = map.to_blocktypes();
-        let inputs = InputMask::new();
         Self { map, player, blocks }
     }
 
@@ -160,10 +159,16 @@ impl Arena {
                 block_normal = -weight;
 
                 // obtains the frictional force.
-                let velocity_x = self.player.velocity.normalize_or_zero().x;
-                let blocktype = self.get_blocktype_at(row, col);
-                let coeff_friction = block::get_block_friction(blocktype.unwrap());
-                block_friction = -block_normal.length() * coeff_friction * Vec2::new(velocity_x, 0.0);
+                let velocity_x_unit: f32 = normalize_float(self.player.velocity.x);
+                // if player's velocity is normalized to be 0, then we can directly set it to
+                // prevent floating point rounding errors.
+                self.player.velocity.x = self.player.velocity.x * velocity_x_unit.abs();
+
+                // we are already on a block, so the blocktype should not be None
+                let blocktype = self.get_blocktype_at(row, col).unwrap();
+
+                let coeff_friction = block::get_block_friction(blocktype);
+                block_friction = -coeff_friction * block_normal.length() * Vec2::new(velocity_x_unit, 0.0);
 
                 // obtains the forces from player's inputs.
                 let has_jump = input.has_mask(Input::Up) as u8 as f32;
@@ -228,5 +233,16 @@ impl Arena {
                 }
             }
         }
+    }
+}
+
+fn normalize_float(num: f32) -> f32 {
+    let threshold = 1e1;
+    if f32::abs(num) < threshold {
+        0.0
+    } else if num > 0.0 {
+        1.0
+    } else {
+        -1.0
     }
 }
