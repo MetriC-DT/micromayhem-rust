@@ -12,15 +12,15 @@ use crate::weaponscatalog::{DEFAULT_BULLET_COUNTS, DEFAULT_MASSES};
 ///
 /// direction assumes a unit vector.
 /// Velocity does not matter until the weapon is discarded.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Weapon {
     pub(crate) bullets: u8,
+    pub(crate) mass: f32,
+    pub(crate) weapontype: WeaponType,
     position: Vec2,
     velocity: Vec2,
     discarded: bool,
     direction: f32,
-    weapontype: WeaponType,
-    pub(crate) mass: f32,
     last_attack_time: u128,
     reload_started_time: u128,
 }
@@ -66,7 +66,7 @@ impl Weapon {
     ///
     /// If the attack was successfully executed, then attack returns true, otherwise, 
     /// it will return false. Successful execution means attack is not on cooldown or reloaded.
-    pub fn attack(&mut self) -> bool {
+    pub(crate) fn attack(&mut self) -> bool {
         let i = self.weapontype as usize;
 
         let currtime = SystemTime::now()
@@ -86,8 +86,13 @@ impl Weapon {
         }
     }
 
-    /// throws the weapon. Starts reloading.
-    pub fn throw(&mut self) {
+    /// throws the weapon.
+    pub(crate) fn throw(&mut self) {
         self.discarded = true;
+    }
+
+    /// sets the position of the weapon the player is holding.
+    pub(crate) fn set_position(&mut self, position: Vec2) {
+        self.position = position;
     }
 }

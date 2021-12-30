@@ -2,10 +2,8 @@ use core::fmt;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
-use crate::GRAVITY_DEFAULT;
 use crate::block;
 use crate::block::BlockType;
-use glam::Vec2;
 use bincode::deserialize_from;
 use bincode::serialize_into;
 use serde::{Serialize , Deserialize};
@@ -113,17 +111,12 @@ pub struct Map {
     /// In order to access the information for a specific block type,
     /// call the `get_blocks_of_type(BlockType)` method.
     mapblocks: MapBlocks,
-
-    /// gravity vector.
-    gravity: [f32; 2],
 }
 
 impl fmt::Display for Map {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let occupied = self.get_all_occupied();
-        write!(f, "{}\nGravity={:?}",
-               occupied,
-               self.gravity)
+        write!(f, "{}", occupied)
     }
 }
 
@@ -140,19 +133,19 @@ impl Default for Map {
         }
 
         let mapblocks: MapBlocks = data.into();
-        Map::new(mapblocks, GRAVITY_DEFAULT).unwrap()
+        Map::new(mapblocks).unwrap()
     }
 }
 
 impl Map {
     /// Constructs a new map
-    pub(crate) fn new(mapblocks: MapBlocks, gravity: Vec2) -> Result<Map, String> {
+    pub(crate) fn new(mapblocks: MapBlocks) -> Result<Map, String> {
         let mapblocks = Map::verify_mapblocks(mapblocks)?;
-        Ok(Map { mapblocks, gravity: gravity.to_array() })
+        Ok(Map { mapblocks })
     }
 
     pub(crate) fn from_mapblocks(mapblocks: MapBlocks) -> Result<Map, String> {
-        Map::new(mapblocks, GRAVITY_DEFAULT)
+        Map::new(mapblocks)
     }
 
     /// Constructs a new map from data saved in a file.
@@ -201,11 +194,6 @@ impl Map {
         } else {
             Ok(MapBlocks(bits))
         }
-    }
-
-    /// obtains the gravity associated with the map.
-    pub(crate) fn get_gravity(&self) -> Vec2 {
-        self.gravity.into()
     }
 
     /// obtains the locations that are occupied by blocks of specified type

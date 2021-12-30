@@ -1,4 +1,5 @@
 use crate::ERROR_THRESHOLD;
+use crate::GRAVITY_DEFAULT;
 use crate::JUMP_ACCEL;
 use crate::AIR_FRICTION;
 use crate::ARENA_HEIGHT;
@@ -133,7 +134,7 @@ impl Arena {
         //
         // Considers forces from:
         // weight + gun recoil + block friction + block normal + bullet hit + WASD inputs.
-        let weight = self.map.get_gravity() * total_mass;
+        let weight = GRAVITY_DEFAULT * total_mass;
         let mut lowest_block_y: f32 = ARENA_HEIGHT + self.player.height;
         let mut block_friction = Vec2::ZERO;
         let mut run_friction = Vec2::new(AIR_FRICTION, 0.0);
@@ -145,6 +146,7 @@ impl Arena {
         let mut drop_input: bool = false;
         let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
         let has_right = input.has_mask(Input::Right) as u8 as f32;
+        let direction = has_left + has_right;
         let has_jump = input.has_mask(Input::Up) as u8 as f32;
 
         let first_rowcol_below_opt = self.find_first_rowcol_below(&left_grid_position, &right_grid_position);
@@ -196,7 +198,6 @@ impl Arena {
         // TODO: A better solution might employ correcting the run force by calculating its difference
         // against the maximum allowed acceleration to reach the speed cap.
         let multiplier = 2.0;
-        let direction = has_left + has_right;
         run = multiplier * run_friction * direction;
         if (run.x * self.player.velocity.x > 0.0) && (self.player.velocity.x.abs() >= self.player.speed_cap) {
             run = Vec2::ZERO;
@@ -212,7 +213,7 @@ impl Arena {
         let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
 
         // updates the player after calculating the applied forces above.
-        self.player.update(dt, lowest_block_y, total_force, drop_input);
+        self.player.update(dt, lowest_block_y, total_force, drop_input, direction);
 
         // TODO: Obtains the location of all the other players.
     }

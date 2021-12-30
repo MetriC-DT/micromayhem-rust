@@ -1,8 +1,12 @@
 /// A list of all the weapons and their various properties
+///
+/// README: An alternative approach is to have all of the weapon properties in a 
+/// JSON object and just read all that in at run time. Might be more readable than this.
 use strum::EnumCount;
 use strum_macros::EnumCount;
 use crate::weapon::Weapon;
 use WeaponType::*;
+use BulletType::*;
 
 /// Type of the weapon
 #[derive(Debug, Clone, EnumCount, Copy)]
@@ -11,13 +15,34 @@ pub enum WeaponType {
 }
 
 /// Type of the bullets fired from various weapons.
+/// README: maybe implement bullet "attacks" types so we can have different implementations
+/// (e.g. exploding missile).
 #[derive(Debug, Clone, EnumCount, Copy)]
 pub enum BulletType {
     Pistol,
     Rifle,
     Sniper,
-    Missile,
 }
+
+/// bullet mass properties.
+pub(crate) const DEFAULT_BULLET_MASSES: [f32; BulletType::COUNT] = {
+    let mut bullet_masses = [0.0; BulletType::COUNT];
+
+    bullet_masses[Pistol as usize] = 10.0;
+    bullet_masses[Rifle as usize] = 10.0;
+    bullet_masses[Sniper as usize] = 10.0;
+    bullet_masses
+};
+
+/// bullet velocities properties.
+pub(crate) const DEFAULT_BULLET_SPEEDS: [f32; BulletType::COUNT] = {
+    let mut bullet_speeds = [0.0; BulletType::COUNT];
+
+    bullet_speeds[Pistol as usize] = 10.0;
+    bullet_speeds[Rifle as usize] = 10.0;
+    bullet_speeds[Sniper as usize] = 10.0;
+    bullet_speeds
+};
 
 
 /// number of initial bullets of each gun
