@@ -6,6 +6,7 @@ use crate::HORIZONTAL_PADDING;
 use crate::VERTICAL_BLOCK_SPACING;
 use crate::VERTICAL_PADDING;
 use crate::block;
+use crate::input::InputMask;
 use crate::map::Map;
 use crate::block::BlockType;
 use crate::block::BlockRect;
@@ -13,8 +14,8 @@ use crate::BLOCK_WIDTH;
 use crate::BLOCK_HEIGHT;
 use crate::map::VERTICAL_BLOCKS;
 use crate::map::HORIZONTAL_BLOCKS;
-use crate::player::Input;
-use crate::player::{Player, InputMask};
+use crate::input::Input;
+use crate::player::Player;
 use glam::Vec2;
 
 

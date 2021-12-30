@@ -1,3 +1,3 @@
 mod test_map;
 mod test_blocks;
-mod test_player;
+mod test_input;

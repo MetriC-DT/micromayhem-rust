@@ -1,4 +1,4 @@
-use crate::player::{InputMask, Input};
+use crate::input::{InputMask, Input};
 
 #[test]
 fn test_new_inputmask() {

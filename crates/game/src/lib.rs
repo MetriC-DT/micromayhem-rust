@@ -6,6 +6,7 @@ pub mod block;
 pub mod arena;
 pub mod player;
 pub mod weapon;
+pub mod input;
 pub mod weaponscatalog;
 
 #[cfg(test)]

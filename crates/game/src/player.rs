@@ -1,44 +1,6 @@
 use crate::{weapon::Weapon, weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH};
 use glam::Vec2;
 
-pub enum Input {
-    Left,
-    Right,
-    Up,
-    Down,
-    Shoot,
-    Bomb,
-    Throw
-}
-
-#[derive(Debug)]
-pub struct InputMask(u16);
-
-impl InputMask {
-    pub fn new() -> Self {
-        Self(0)
-    }
-
-    pub fn add_mask(&mut self, input: Input) {
-        self.0 |= 1 << input as usize;
-    }
-
-    pub fn has_mask(&self, input: Input) -> bool {
-        (self.0 & (1 << input as usize)) != 0
-    }
-
-    pub fn remove_mask(&mut self, input: Input) {
-        self.0 &= !(1 << input as usize)
-    }
-}
-
-impl Default for InputMask {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-
 /// Since the display grid has increasing y for going lower on screen,
 /// the convention will be downward y direction is positive.
 #[derive(Debug)]
