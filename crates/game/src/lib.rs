@@ -49,5 +49,5 @@ pub const ARENA_WIDTH: f32 = 2.0 * HORIZONTAL_PADDING + BLOCK_WIDTH * HORIZONTAL
 /// (number of blocks vertically + padding above and below)
 pub const ARENA_HEIGHT: f32 = 2.0 * VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * VERTICAL_BLOCKS as f32;
 
-/// threshold for determining if a position is different from another position.
-pub const DELTA_THRESHOLD: f32 = 0.05;
+/// threshold for determining if a float should be rounded to zero.
+pub const ERROR_THRESHOLD: f32 = 1e-6;

@@ -1,4 +1,4 @@
-use crate::{weapon::Weapon, weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, DELTA_THRESHOLD};
+use crate::{weapon::Weapon, weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH};
 use glam::Vec2;
 
 pub enum Input {
@@ -93,16 +93,8 @@ impl Player {
         let drop_height = drop_input as u8 as f32 * 1.0;
         new_position.y = f32::min(max_y - self.height, new_position.y) + drop_height;
 
-        // dx is just the change in position. NOT THE CHANGE in X component.
-        let mut dx = new_position - self.position;
-
-        // fix for floating point errors.
-        if dx.x.abs() < DELTA_THRESHOLD {
-            dx.x = 0.0;
-        }
-
-        self.velocity = dx/dt;
-        self.position += dx;
+        self.velocity = (new_position - self.position) / dt;
+        self.position = new_position;
     }
 
     /// obtains the total mass of the player (player + current weapon).

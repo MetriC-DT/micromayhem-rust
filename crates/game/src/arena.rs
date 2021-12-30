@@ -1,3 +1,4 @@
+use crate::ERROR_THRESHOLD;
 use crate::JUMP_ACCEL;
 use crate::AIR_FRICTION;
 use crate::ARENA_HEIGHT;
@@ -159,7 +160,8 @@ impl Arena {
                 block_normal = -weight;
 
                 // obtains the frictional force.
-                let velocity_x_unit: f32 = normalize_float(self.player.velocity.x);
+                let xvel = self.player.velocity.x;
+                let velocity_x_unit: f32 = normalize_float(xvel);
 
                 // if player's velocity is normalized to be 0, then we can directly set it to
                 // prevent floating point rounding errors.
@@ -169,7 +171,11 @@ impl Arena {
                 let blocktype = self.get_blocktype_at(row, col).expect("BlockType should not be None");
 
                 let coeff_friction = block::get_block_friction(blocktype);
-                block_friction = -coeff_friction * block_normal.length() * Vec2::new(velocity_x_unit, 0.0);
+
+                // minimizes so we do not overshoot
+                let max_allowed_friction_magnitude = xvel.abs() * total_mass / dt;
+                let block_friction_magnitude = f32::min(coeff_friction * block_normal.length(), max_allowed_friction_magnitude);
+                block_friction = -velocity_x_unit * block_friction_magnitude * Vec2::X;
                 run_friction = coeff_friction * block_normal.length() * Vec2::X;
 
                 // accelerations from player inputs
@@ -259,8 +265,7 @@ impl Arena {
 /// returns 1.0 if num is greater than the threshold and positive, -1.0 if num absolute value is
 /// greater than threshold and negative, and 0.0 if its magnitude is less than the threshold.
 fn normalize_float(num: f32) -> f32 {
-    let threshold = 1.0;
-    if f32::abs(num) <= threshold {
+    if f32::abs(num) <= ERROR_THRESHOLD {
         0.0
     } else if num > 0.0 {
         1.0
