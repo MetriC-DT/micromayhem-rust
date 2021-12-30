@@ -198,7 +198,7 @@ impl Arena {
         // gets player shooting bullet recoil.
         // Since the recoil should punish a player less than a knockback, the force exerted by
         // recoil will be a fraction of the impulse over time rather than the entire dp/dt.
-        if input.has_mask(Input::Shoot) && self.player.current_weapon.attack() {
+        if input.has_mask(Input::Shoot) && self.player.attack() {
             println!("attack called");
         }
 

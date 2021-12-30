@@ -48,7 +48,7 @@ pub struct Player {
     pub mass: f32,
     pub speed_cap: f32,
     default_weapon: Weapon,
-    pub current_weapon: Weapon,
+    current_weapon: Weapon,
     team: usize,
     damage_multiplier: f32,
     lives: usize,
@@ -102,6 +102,11 @@ impl Player {
     /// obtains the total mass of the player (player + current weapon).
     pub fn get_total_mass(&self) -> f32 {
         return self.mass + self.current_weapon.mass;
+    }
+
+    /// attacks with the current weapon.
+    pub fn attack(&mut self) -> bool {
+        return self.current_weapon.attack();
     }
 }
 
