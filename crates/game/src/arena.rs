@@ -160,7 +160,7 @@ impl Arena {
 
                 // obtains the frictional force.
                 let velocity_x_unit: f32 = normalize_float(self.player.velocity.x);
-                println!("{}", self.player.velocity.x);
+
                 // if player's velocity is normalized to be 0, then we can directly set it to
                 // prevent floating point rounding errors.
                 self.player.velocity.x = self.player.velocity.x * velocity_x_unit.abs();
@@ -194,6 +194,10 @@ impl Arena {
         if (run.x * self.player.velocity.x > 0.0) && (self.player.velocity.x.abs() >= self.player.speed_cap) {
             run = Vec2::ZERO;
         }
+
+        // gets player shooting bullet recoil.
+        // Since the recoil should punish a player less than a knockback, the force exerted by
+        // recoil will be a fraction of the impulse over time rather than the entire dp/dt.
 
         let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
 
@@ -249,9 +253,11 @@ impl Arena {
     }
 }
 
+/// returns 1.0 if num is greater than the threshold and positive, -1.0 if num absolute value is
+/// greater than threshold and negative, and 0.0 if its magnitude is less than the threshold.
 fn normalize_float(num: f32) -> f32 {
     let threshold = 1.0;
-    if f32::abs(num) < threshold {
+    if f32::abs(num) <= threshold {
         0.0
     } else if num > 0.0 {
         1.0
