@@ -32,6 +32,12 @@ impl InputMask {
     }
 }
 
+impl Default for InputMask {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 
 /// Since the display grid has increasing y for going lower on screen,
 /// the convention will be downward y direction is positive.
@@ -101,12 +107,12 @@ impl Player {
 
     /// obtains the total mass of the player (player + current weapon).
     pub fn get_total_mass(&self) -> f32 {
-        return self.mass + self.current_weapon.mass;
+        self.mass + self.current_weapon.mass
     }
 
     /// attacks with the current weapon.
     pub fn attack(&mut self) -> bool {
-        return self.current_weapon.attack();
+        self.current_weapon.attack()
     }
 }
 

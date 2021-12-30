@@ -32,7 +32,7 @@ fn build_mapmesh(arena: &Arena, ctx: &mut Context) -> GameResult<Mesh> {
     let colors = [Color::BLACK, Color::BLUE];
 
     for blockitem in arena.get_blocks_iter() {
-        let block: BlockRect = blockitem.into();
+        let block: BlockRect = blockitem;
         let r = Rect{x: block.x as f32, y: block.y as f32, w: block.w as f32, h: block.h as f32};
         mb.rectangle(DrawMode::stroke(1.0), r, colors[block.blocktype as usize]).unwrap();
     }

@@ -40,5 +40,5 @@ pub fn load_configuration(cb: ContextBuilder) -> ContextBuilder {
         modules: ggez::conf::ModuleConf::default(),
     };
 
-    return cb.default_conf(default_config);
+    cb.default_conf(default_config)
 }

@@ -80,9 +80,9 @@ impl Weapon {
         if reloaded_check && attack_cooldown_check {
             self.last_attack_time = currtime;
             ATTACK_FUNCTIONS[i](self);
-            return true;
+            true
         } else {
-            return false;
+            false
         }
     }
 

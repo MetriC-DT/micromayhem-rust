@@ -93,7 +93,7 @@ impl Sprite {
 
     pub fn draw_params(&self, pos: Vec2) -> graphics::DrawParam {
         graphics::DrawParam::new()
-            .src(self.rect.clone())
+            .src(self.rect)
             .scale(self.scale)
             .dest(pos)
     }

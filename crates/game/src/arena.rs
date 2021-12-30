@@ -163,7 +163,7 @@ impl Arena {
 
                 // if player's velocity is normalized to be 0, then we can directly set it to
                 // prevent floating point rounding errors.
-                self.player.velocity.x = self.player.velocity.x * velocity_x_unit.abs();
+                self.player.velocity.x *= velocity_x_unit.abs();
 
                 // we are already on a block, so the blocktype should not be None
                 let blocktype = self.get_blocktype_at(row, col).expect("BlockType should not be None");

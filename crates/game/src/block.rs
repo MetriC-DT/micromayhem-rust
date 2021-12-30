@@ -25,7 +25,7 @@ pub(crate) const BLOCK_FRICTIONS: [f32; BlockType::COUNT] = {
 /// obtains the coefficient of friction of a block with type `blocktype`
 pub(crate) fn get_block_friction(blocktype: BlockType) -> f32 {
     let i = blocktype as usize;
-    return BLOCK_FRICTIONS[i];
+    BLOCK_FRICTIONS[i]
 }
 
 /// represents a rectangle of the block.
