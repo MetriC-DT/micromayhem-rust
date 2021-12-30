@@ -2,7 +2,6 @@ use crate::JUMP_ACCEL;
 use crate::AIR_FRICTION;
 use crate::ARENA_HEIGHT;
 use crate::HORIZONTAL_PADDING;
-use crate::PLAYER_SPEED_CAP;
 use crate::VERTICAL_BLOCK_SPACING;
 use crate::VERTICAL_PADDING;
 use crate::block;
@@ -186,12 +185,14 @@ impl Arena {
         //
         // Therefore, if they are already at the max speed, then just keep their run
         // acceleration the same magnitude as the friction force.
+        //
+        // TODO: A better solution might employ correcting the run force by calculating its difference
+        // against the maximum allowed acceleration to reach the speed cap.
         let multiplier = 2.0;
         let direction = has_left + has_right;
-        let run_orig = run_friction * direction;
-        run = multiplier * run_orig;
+        run = multiplier * run_friction * direction;
         if (run.x * self.player.velocity.x > 0.0) && (self.player.velocity.x.abs() >= self.player.speed_cap) {
-            run = run_orig;
+            run = Vec2::ZERO;
         }
 
         let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;

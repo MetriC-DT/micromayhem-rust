@@ -71,10 +71,7 @@ impl Player {
     /// formed by the platforms that the player will cross. However, this is more computationally
     /// expensive to compute.
     ///
-    /// `drop_input` detects whether a valid drop input command was pushed (e.g. only when on
-    /// block).
-    ///
-    /// `run_input` is -1.0 when left, 1.0 when right, and 0.0 when none.
+    /// `drop_input` detects whether a valid drop input command was pushed (e.g. only when on block).
     pub fn update(&mut self, dt: f32, max_y: f32, force: Vec2, drop_input: bool) {
         self.acceleration = force / self.get_total_mass();
 
