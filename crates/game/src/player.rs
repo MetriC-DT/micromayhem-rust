@@ -33,8 +33,7 @@ impl InputMask {
 }
 
 /// acceleration for jumping.
-pub(crate) const JUMP_ACCEL: Vec2 = const_vec2!([0.0, -70000.0]);
-pub(crate) const RUN_ACCEL: Vec2 = const_vec2!([3000.0, 0.0]);
+pub(crate) const JUMP_ACCEL: Vec2 = const_vec2!([0.0, -75000.0]);
 
 
 /// Since the display grid has increasing y for going lower on screen,
@@ -49,12 +48,13 @@ pub struct Player {
     pub width: f32,
     pub height: f32,
     pub direction: f32,
+    pub mass: f32,
+    pub speed_cap: f32,
     default_weapon: Weapon,
     current_weapon: Weapon,
     team: usize,
     damage_multiplier: f32,
     lives: usize,
-    mass: f32,
 }
 
 impl Player {
@@ -64,7 +64,7 @@ impl Player {
 
     /// Updates the position and velocities of the player.
     ///
-    /// max_y is the maximum y unit that the player can drop down to. This is used
+    /// `max_y` is the maximum y unit that the player can drop down to. This is used
     /// when accounting for ground interrupting the player's fall.
     /// 
     /// assumes the tick rate is high enough such that the player will always fall
@@ -73,10 +73,16 @@ impl Player {
     /// whether the parabola arced by the player's motion will intersect with a line segment
     /// formed by the platforms that the player will cross. However, this is more computationally
     /// expensive to compute.
+    ///
+    /// `drop_input` detects whether a valid drop input command was pushed (e.g. only when on
+    /// block).
+    ///
+    /// `run_input` is -1.0 when left, 1.0 when right, and 0.0 when none.
     pub fn update(&mut self, dt: f32, max_y: f32, force: Vec2, drop_input: bool) {
         self.acceleration = force / self.get_total_mass();
 
         let mut new_position = self.position + self.velocity * dt + 0.5 * self.acceleration * dt * dt;
+
 
         // make edits to player's new_position based on obstacles between the original and final
         // destinations.
@@ -112,6 +118,7 @@ impl Default for Player {
             velocity: Vec2::ZERO,
             acceleration: Vec2::ZERO,
             name: String::new(),
+            speed_cap: 500.0,
             width: 30.0,
             height: 30.0,
             direction: 1.0,
@@ -119,8 +126,8 @@ impl Default for Player {
             current_weapon,
             team: 0,
             damage_multiplier: 0.0,
-            lives: 3,
-            mass: 1.0
+            lives: 5,
+            mass: 100.0,
         }
     }
 }

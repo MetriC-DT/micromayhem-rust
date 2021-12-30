@@ -32,7 +32,7 @@ pub(crate) const DEFAULT_BULLET_COUNTS: [u8; WeaponType::COUNT] = {
 pub(crate) const DEFAULT_MASSES: [f32; WeaponType::COUNT] = {
     let mut masses: [f32; WeaponType::COUNT] = [0.0; WeaponType::COUNT];
 
-    masses[BasicPistol as usize] = 10.0;
+    masses[BasicPistol as usize] = 5.0;
     masses
 };
 

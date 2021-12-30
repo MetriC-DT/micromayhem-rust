@@ -10,7 +10,6 @@ use crate::map::HORIZONTAL_BLOCKS;
 use crate::map::HORIZONTAL_PADDING;
 use crate::player::Input;
 use crate::player::JUMP_ACCEL;
-use crate::player::RUN_ACCEL;
 use crate::player::{Player, InputMask};
 use glam::Vec2;
 
@@ -21,6 +20,8 @@ pub const ARENA_WIDTH: f32 = 2.0 * HORIZONTAL_PADDING + BLOCK_WIDTH * HORIZONTAL
 /// total height in pixels
 /// (number of blocks vertically + padding above and below)
 pub const ARENA_HEIGHT: f32 = 2.0 * VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * VERTICAL_BLOCKS as f32;
+
+pub const AIR_FRICTION: f32 = 0.1;
 
 
 /// represents the entire world of the game (entire map + players).
@@ -125,7 +126,9 @@ impl Arena {
 
     /// Simulates the arena when delta time `dt` has passed.
     pub fn update(&mut self, dt: f32, input: &InputMask) {
+        // total mass obtains mass of player + weapon.
         let total_mass = self.player.get_total_mass();
+        let player_mass = self.player.mass;
         let player_bottom = self.player.position + Vec2::new(0.0, self.player.height);
         let left_grid_position = Arena::to_row_col(player_bottom);
         let right_grid_position = Arena::to_row_col(player_bottom + Vec2::new(self.player.width, 0.0));
@@ -144,6 +147,8 @@ impl Arena {
         let mut jump = Vec2::ZERO;
         let mut run = Vec2::ZERO;
         let mut drop_input = false;
+        let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
+        let has_right = input.has_mask(Input::Right) as u8 as f32;
 
         let first_rowcol_below_opt = self.find_first_rowcol_below(&left_grid_position, &right_grid_position);
 
@@ -172,13 +177,17 @@ impl Arena {
 
                 // obtains the forces from player's inputs.
                 let has_jump = input.has_mask(Input::Up) as u8 as f32;
-                let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
-                let has_right = input.has_mask(Input::Right) as u8 as f32;
-                jump = total_mass * JUMP_ACCEL * has_jump;
+                jump = player_mass * JUMP_ACCEL * has_jump;
 
-                // TODO - run might have to be implemented as a velocity to prevent the awkward
-                // acceleration control of running left and right.
-                run = total_mass * (has_left + has_right) * RUN_ACCEL;
+                // Disallows any acceleration input that is in the same direction as the player's
+                // velocity if the player's velocity is already above its speed_cap.
+                //
+                // Therefore, if they are already at the max speed, then just keep their run
+                // acceleration the same magnitude as the coeff of friction.
+                run = 2.0 * coeff_friction * block_normal.length() * Vec2::new(has_left + has_right, 0.0);
+                if (run.x * self.player.velocity.x > 0.0) && (self.player.velocity.x.abs() >= self.player.speed_cap) {
+                    run = run / 2.0;
+                }
 
                 // can only drop down if we are standing on block.
                 drop_input = input.has_mask(Input::Down);
@@ -240,7 +249,7 @@ impl Arena {
 }
 
 fn normalize_float(num: f32) -> f32 {
-    let threshold = 1e1;
+    let threshold = 0.5;
     if f32::abs(num) < threshold {
         0.0
     } else if num > 0.0 {
