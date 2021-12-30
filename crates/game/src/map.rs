@@ -2,10 +2,9 @@ use core::fmt;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
+use crate::GRAVITY_DEFAULT;
 use crate::block;
-use crate::block::BLOCK_HEIGHT;
 use crate::block::BlockType;
-use glam::const_vec2;
 use glam::Vec2;
 use bincode::deserialize_from;
 use bincode::serialize_into;
@@ -41,20 +40,6 @@ const ROWMASK: i128 = {
 
 /// bitmask for getting an entire column.
 const COLMASK: i128 = (1 << VERTICAL_BLOCKS) - 1;
-
-/// default gravity limit (positive orientation is downwards).
-pub(crate) const GRAVITY_DEFAULT: Vec2 = const_vec2!([0.0, 3000.0]);
-
-/// horizontal padding of map in number of blocks
-/// This is the region around where player is considered to be alive.
-pub(crate) const HORIZONTAL_PADDING: f32 = 200.0;
-
-/// vertical padding of map in number of blocks.
-/// This is the region around where player is considered to be alive.
-pub(crate) const VERTICAL_PADDING: f32 = 200.0;
-
-/// vertical spacing in numbers of vertical blocks of spacing
-pub(crate) const VERTICAL_BLOCK_SPACING: f32 = 100.0;
 
 /// Type alias to represent all positions occupied by the 8x16
 /// grid of blocks of all types. Used internally.
@@ -162,8 +147,6 @@ impl Default for Map {
 impl Map {
     /// Constructs a new map
     pub(crate) fn new(mapblocks: MapBlocks, gravity: Vec2) -> Result<Map, String> {
-        assert!(VERTICAL_BLOCK_SPACING > BLOCK_HEIGHT);
-
         let mapblocks = Map::verify_mapblocks(mapblocks)?;
         Ok(Map { mapblocks, gravity: gravity.to_array() })
     }

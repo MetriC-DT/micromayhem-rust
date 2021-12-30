@@ -1,11 +1,11 @@
+use game::{ARENA_WIDTH, ARENA_HEIGHT};
 use game::arena::Arena;
 use game::block::BlockRect;
 use game::player::{InputMask, Input};
-use ggez::{Context, input};
+use ggez::Context;
 use ggez::event::KeyCode;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam, Rect};
-use glam::Vec2;
 use crate::BACKGROUND_COLOR;
 use crate::viewport::Viewport;
 use gui::spriteloader::Atlas;
@@ -33,9 +33,12 @@ fn build_mapmesh(arena: &Arena, ctx: &mut Context) -> GameResult<Mesh> {
 
     for blockitem in arena.get_blocks_iter() {
         let block: BlockRect = blockitem.into();
-        let r = Rect{x: block.x, y: block.y, w: block.w, h: block.h};
+        let r = Rect{x: block.x as f32, y: block.y as f32, w: block.w as f32, h: block.h as f32};
         mb.rectangle(DrawMode::stroke(1.0), r, colors[block.blocktype as usize]).unwrap();
     }
+
+    let bounds = Rect{x: 0.0, y: 0.0, w: ARENA_WIDTH as f32, h: ARENA_HEIGHT as f32};
+    mb.rectangle(DrawMode::stroke(1.0), bounds, Color::BLACK).unwrap();
     mb.build(ctx)
 }
 
@@ -73,7 +76,7 @@ impl EventHandler for GameState {
         graphics::draw(ctx, &self.mapmesh, DrawParam::default().dest(offset))?;
 
         let [x, y] = player.position.to_array();
-        let playerrect = ggez::graphics::Rect {x, y, w: player.width, h: player.height};
+        let playerrect = ggez::graphics::Rect {x: x as f32, y: y as f32, w: player.width as f32, h: player.height as f32};
         let meshrect = Mesh::new_rectangle(ctx, DrawMode::fill(), playerrect, Color::BLUE).unwrap();
         graphics::draw(ctx, &meshrect, DrawParam::default().dest(offset))?;
 

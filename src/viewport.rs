@@ -1,4 +1,4 @@
-use game::{player::Player, arena::{ARENA_WIDTH, ARENA_HEIGHT}};
+use game::{player::Player, ARENA_WIDTH, ARENA_HEIGHT};
 use ggez::{Context, graphics};
 use glam::Vec2;
 
@@ -19,21 +19,23 @@ impl Viewport {
     /// If screen is bigger than the game view, then we center the game map on the center of the
     /// screen.
     pub fn get_viewport_centered_at(point: Vec2, ctx: &Context) -> Viewport {
+        let arena_w = ARENA_WIDTH as f32;
+        let arena_h = ARENA_HEIGHT as f32;
         let (screen_width, screen_height): (f32, f32) = graphics::size(ctx);
         let mut screen_corner = point - Vec2::new(screen_width, screen_height) / 2.0;
 
         let topleft = Vec2::ZERO;
-        let bottomright_x = f32::max(ARENA_WIDTH - screen_width, 0.0);
-        let bottomright_y = f32::max(ARENA_HEIGHT - screen_height, 0.0);
+        let bottomright_x = f32::max(arena_w - screen_width, 0.0);
+        let bottomright_y = f32::max(arena_h - screen_height, 0.0);
         let bottomright = Vec2::new(bottomright_x, bottomright_y);
 
         screen_corner = screen_corner.clamp(topleft, bottomright);
 
         // centers if screen is taller or wider.
-        let screen_is_wider = (screen_width > ARENA_WIDTH) as u8 as f32;
-        let screen_is_taller = (screen_height > ARENA_HEIGHT) as u8 as f32;
-        let centervector_x = screen_is_wider * (screen_width - ARENA_WIDTH) / 2.0;
-        let centervector_y = screen_is_taller * (screen_height - ARENA_HEIGHT) / 2.0;
+        let screen_is_wider = (screen_width > arena_w as f32) as u8 as f32;
+        let screen_is_taller = (screen_height > arena_h as f32) as u8 as f32;
+        let centervector_x = screen_is_wider * (screen_width - arena_w as f32) / 2.0;
+        let centervector_y = screen_is_taller * (screen_height - arena_h as f32) / 2.0;
         screen_corner -= Vec2::new(centervector_x, centervector_y);
 
         Viewport::new(screen_corner)

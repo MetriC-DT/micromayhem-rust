@@ -1,5 +1,5 @@
-use crate::{weapon::Weapon, weaponscatalog::WeaponType, arena::ARENA_WIDTH};
-use glam::{Vec2, const_vec2};
+use crate::{weapon::Weapon, weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH};
+use glam::Vec2;
 
 pub enum Input {
     Left,
@@ -31,9 +31,6 @@ impl InputMask {
         self.0 &= !(1 << input as usize)
     }
 }
-
-/// acceleration for jumping.
-pub(crate) const JUMP_ACCEL: Vec2 = const_vec2!([0.0, -75000.0]);
 
 
 /// Since the display grid has increasing y for going lower on screen,
@@ -118,16 +115,16 @@ impl Default for Player {
             velocity: Vec2::ZERO,
             acceleration: Vec2::ZERO,
             name: String::new(),
-            speed_cap: 500.0,
-            width: 30.0,
-            height: 30.0,
+            speed_cap: PLAYER_SPEED_CAP,
+            width: PLAYER_WIDTH,
+            height: PLAYER_HEIGHT,
             direction: 1.0,
             default_weapon,
             current_weapon,
             team: 0,
             damage_multiplier: 0.0,
             lives: 5,
-            mass: 100.0,
+            mass: PLAYER_MASS,
         }
     }
 }

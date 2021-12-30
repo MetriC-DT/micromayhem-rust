@@ -2,12 +2,6 @@ use strum::EnumCount;
 use strum_macros::{EnumCount, EnumIter};
 use BlockType::*;
 
-/// Width of a block in pixels
-pub(crate) const BLOCK_WIDTH: f32 = 128.0;
-
-/// Height of a block in pixels
-pub(crate) const BLOCK_HEIGHT: f32 = 20.0;
-
 
 /// types of blocks
 #[derive(Debug, Clone, Copy, EnumIter, EnumCount)]
