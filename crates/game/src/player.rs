@@ -48,7 +48,7 @@ pub struct Player {
     pub mass: f32,
     pub speed_cap: f32,
     default_weapon: Weapon,
-    current_weapon: Weapon,
+    pub current_weapon: Weapon,
     team: usize,
     damage_multiplier: f32,
     lives: usize,

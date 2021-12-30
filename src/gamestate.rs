@@ -90,6 +90,7 @@ impl EventHandler for GameState {
             KeyCode::A => self.inputmask.add_mask(Input::Left),
             KeyCode::S => self.inputmask.add_mask(Input::Down),
             KeyCode::D => self.inputmask.add_mask(Input::Right),
+            KeyCode::O => self.inputmask.add_mask(Input::Shoot),
             _ => ()
         }
     }
@@ -100,6 +101,7 @@ impl EventHandler for GameState {
             KeyCode::A => self.inputmask.remove_mask(Input::Left),
             KeyCode::S => self.inputmask.remove_mask(Input::Down),
             KeyCode::D => self.inputmask.remove_mask(Input::Right),
+            KeyCode::O => self.inputmask.remove_mask(Input::Shoot),
             _ => ()
         }
     }

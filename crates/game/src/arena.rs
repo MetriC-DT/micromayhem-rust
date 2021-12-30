@@ -175,8 +175,8 @@ impl Arena {
                 // accelerations from player inputs
                 jump = player_mass * JUMP_ACCEL * has_jump;
 
-                // can only drop down if we are standing on block.
-                drop_input = input.has_mask(Input::Down);
+                // can only drop down if we are standing on block, and not on the lowest platform.
+                drop_input = input.has_mask(Input::Down) && row != VERTICAL_BLOCKS - 1;
             }
         }
 
@@ -198,6 +198,9 @@ impl Arena {
         // gets player shooting bullet recoil.
         // Since the recoil should punish a player less than a knockback, the force exerted by
         // recoil will be a fraction of the impulse over time rather than the entire dp/dt.
+        if input.has_mask(Input::Shoot) && self.player.current_weapon.attack() {
+            println!("attack called");
+        }
 
         let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
 
