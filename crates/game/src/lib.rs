@@ -48,3 +48,6 @@ pub const ARENA_WIDTH: f32 = 2.0 * HORIZONTAL_PADDING + BLOCK_WIDTH * HORIZONTAL
 /// total height in pixels
 /// (number of blocks vertically + padding above and below)
 pub const ARENA_HEIGHT: f32 = 2.0 * VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * VERTICAL_BLOCKS as f32;
+
+/// threshold for determining if a position is different from another position.
+pub const DELTA_THRESHOLD: f32 = 0.05;
