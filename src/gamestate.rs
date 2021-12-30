@@ -1,7 +1,7 @@
 use game::{ARENA_WIDTH, ARENA_HEIGHT};
 use game::arena::Arena;
 use game::block::BlockRect;
-use game::player::{InputMask, Input};
+use game::input::{InputMask, Input};
 use ggez::Context;
 use ggez::event::KeyCode;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
