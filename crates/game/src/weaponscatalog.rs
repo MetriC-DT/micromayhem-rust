@@ -85,23 +85,3 @@ pub(crate) const BULLET_TYPES: [BulletType; WeaponType::COUNT] = {
     types[BasicPistol as usize] = Pistol;
     types
 };
-
-
-/// handling of each attack using various attack implementations
-pub(crate) const ATTACK_FUNCTIONS: [fn(&mut Weapon); WeaponType::COUNT] = {
-    // for some reason, we don't need a default initialization of array here?
-    let mut funcs = [GUN_ATTACK; WeaponType::COUNT];
-
-    funcs[BasicPistol as usize] = GUN_ATTACK;
-    funcs
-};
-
-// attack implementations
-/// if no bullets left, throw the gun. Otherwise, subtract one and create
-const GUN_ATTACK: fn(&mut Weapon) = |weapon: &mut Weapon| {
-    if weapon.bullets > 0 {
-        weapon.bullets -= 1;
-    } else {
-        weapon.throw();
-    }
-};

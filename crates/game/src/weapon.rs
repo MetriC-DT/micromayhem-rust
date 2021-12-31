@@ -1,8 +1,9 @@
-use crate::weaponscatalog::{WeaponType, RELOAD_TIMES, ATTACK_TIMES, ATTACK_FUNCTIONS, BULLET_TYPES, DEFAULT_BULLET_SPEEDS, DEFAULT_BULLET_MASSES};
+use crate::weaponscatalog::{WeaponType, RELOAD_TIMES, ATTACK_TIMES, BULLET_TYPES, DEFAULT_BULLET_SPEEDS, DEFAULT_BULLET_MASSES};
 use core::fmt::Debug;
 use std::time::SystemTime;
 use glam::Vec2;
 use crate::weaponscatalog::{DEFAULT_BULLET_COUNTS, DEFAULT_MASSES};
+use WeaponStatus::*;
 
 /// contains the various implementations for all the weapons and bullets
 /// in the game.
@@ -15,14 +16,22 @@ use crate::weaponscatalog::{DEFAULT_BULLET_COUNTS, DEFAULT_MASSES};
 #[derive(Debug)]
 pub struct Weapon {
     pub(crate) bullets: u8,
-    pub(crate) mass: f32,
     pub(crate) weapontype: WeaponType,
+    status: WeaponStatus,
     position: Vec2,
     velocity: Vec2,
-    discarded: bool,
     direction: f32,
     last_attack_time: u128,
     reload_started_time: u128,
+}
+
+/// status of the weapon. Should only update when the attack function is called.
+#[derive(Debug, PartialEq)]
+pub enum WeaponStatus {
+    Cooldown,
+    Ready,
+    Empty,
+    Discarded,
 }
 
 /// The bullet "superstruct" as a workaround for rust
@@ -36,6 +45,7 @@ pub struct Bullet {
 impl Weapon {
     pub fn new(position: Vec2, weapontype: WeaponType, direction: f32) -> Self {
         let velocity = Vec2::ZERO;
+        let acceleration = Vec2::ZERO;
         let i = weapontype as usize;
         let bullets = DEFAULT_BULLET_COUNTS[i];
         let mass = DEFAULT_MASSES[i];
@@ -47,13 +57,13 @@ impl Weapon {
 
         let last_attack_time = curr_time;
         let reload_started_time = curr_time;
+        let status = Cooldown;
 
         Self {
             position,
             velocity,
+            status,
             bullets,
-            mass,
-            discarded,
             weapontype,
             direction,
             last_attack_time,
@@ -76,19 +86,30 @@ impl Weapon {
 
         let reloaded_check = currtime - self.reload_started_time > RELOAD_TIMES[i];
         let attack_cooldown_check = currtime - self.last_attack_time > ATTACK_TIMES[i];
+        let can_attack = reloaded_check && attack_cooldown_check;
 
-        if reloaded_check && attack_cooldown_check {
+        if can_attack && self.bullets > 0 {
             self.last_attack_time = currtime;
-            ATTACK_FUNCTIONS[i](self);
+            self.bullets -= 1;
+            self.status = Cooldown;
+            true
+        } else if can_attack {
+            self.status = Empty;
             true
         } else {
             false
         }
     }
 
+    /// obtains the mass of the weapon.
+    pub(crate) fn get_mass(&self) -> f32 {
+        DEFAULT_MASSES[self.weapontype as usize]
+    }
+
     /// throws the weapon.
-    pub(crate) fn throw(&mut self) {
-        self.discarded = true;
+    pub(crate) fn discard(&mut self, velocity: Vec2) {
+        self.status = Discarded;
+        self.velocity = velocity;
     }
 
     /// sets the position of the weapon the player is holding.
@@ -105,5 +126,9 @@ impl Weapon {
         let bulletspeed = DEFAULT_BULLET_SPEEDS[bullettype as usize];
         let bulletmass = DEFAULT_BULLET_MASSES[bullettype as usize];
         self.direction * Vec2::X * bulletspeed * bulletmass
+    }
+
+    pub(crate) fn has_status(&self, status: WeaponStatus) -> bool {
+        return self.status == status;
     }
 }

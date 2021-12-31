@@ -1,4 +1,4 @@
-use crate::{weapon::Weapon, weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH};
+use crate::{weapon::{Weapon, WeaponStatus}, weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, GRAVITY_DEFAULT};
 use glam::Vec2;
 
 /// Since the display grid has increasing y for going lower on screen,
@@ -78,21 +78,24 @@ impl Player {
 
     /// obtains the total mass of the player (player + current weapon).
     pub(crate) fn get_total_mass(&self) -> f32 {
-        self.mass + self.current_weapon.mass
+        self.mass + self.current_weapon.get_mass()
     }
 
     /// attacks with the current weapon.
     pub(crate) fn attack(&mut self) -> bool {
-        if self.current_weapon.bullets > 0 {
-            self.current_weapon.attack()
-        } else {
+        let attacked = self.current_weapon.attack();
+
+        // if weapon is empty, discard on an attack command.
+        if attacked && self.current_weapon.has_status(WeaponStatus::Empty) {
             self.throw();
-            false
         }
+
+        return attacked;
     }
 
     pub(crate) fn throw(&mut self) {
-        self.current_weapon.throw();
+        // TODO: discard velocity should be different from player's velocity.
+        self.current_weapon.discard(self.velocity);
         self.current_weapon = Weapon::new(self.position, self.default_weapontype, self.direction);
     }
 
