@@ -1,4 +1,4 @@
-use crate::weaponscatalog::{WeaponType, RELOAD_TIMES, ATTACK_TIMES, ATTACK_FUNCTIONS};
+use crate::weaponscatalog::{WeaponType, RELOAD_TIMES, ATTACK_TIMES, ATTACK_FUNCTIONS, BULLET_TYPES, DEFAULT_BULLET_SPEEDS, DEFAULT_BULLET_MASSES};
 use core::fmt::Debug;
 use std::time::SystemTime;
 use glam::Vec2;
@@ -94,5 +94,16 @@ impl Weapon {
     /// sets the position of the weapon the player is holding.
     pub(crate) fn set_position(&mut self, position: Vec2) {
         self.position = position;
+    }
+
+    pub(crate) fn set_direction(&mut self, direction: f32) {
+        self.direction = direction;
+    }
+
+    pub(crate) fn get_bullet_momentum(&self) -> Vec2 {
+        let bullettype = BULLET_TYPES[self.weapontype as usize];
+        let bulletspeed = DEFAULT_BULLET_SPEEDS[bullettype as usize];
+        let bulletmass = DEFAULT_BULLET_MASSES[bullettype as usize];
+        self.direction * Vec2::X * bulletspeed * bulletmass
     }
 }

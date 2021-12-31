@@ -207,7 +207,7 @@ impl Arena {
         // Since the recoil should punish a player less than a knockback, the force exerted by
         // recoil will be a fraction of the impulse over time rather than the entire dp/dt.
         if input.has_mask(Input::Shoot) && self.player.attack() {
-            println!("attack called");
+            gun_recoil = -self.player.get_bullet_momentum() / dt;
         }
 
         let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;

@@ -71,29 +71,40 @@ impl Player {
         self.velocity = (new_position - self.position) / dt;
         self.position = new_position;
 
-        self.current_weapon.set_position(new_position);
+        // updates the gun that the player is holding.
+        self.current_weapon.set_position(self.position);
+        self.current_weapon.set_direction(self.direction);
     }
 
     /// obtains the total mass of the player (player + current weapon).
-    pub fn get_total_mass(&self) -> f32 {
+    pub(crate) fn get_total_mass(&self) -> f32 {
         self.mass + self.current_weapon.mass
     }
 
     /// attacks with the current weapon.
-    pub fn attack(&mut self) -> bool {
-        self.current_weapon.attack()
+    pub(crate) fn attack(&mut self) -> bool {
+        if self.current_weapon.bullets > 0 {
+            self.current_weapon.attack()
+        } else {
+            self.throw();
+            false
+        }
     }
 
-    pub fn throw(&mut self) {
+    pub(crate) fn throw(&mut self) {
         self.current_weapon.throw();
         self.current_weapon = Weapon::new(self.position, self.default_weapontype, self.direction);
+    }
+
+    pub(crate) fn get_bullet_momentum(&self) -> Vec2 {
+        self.current_weapon.get_bullet_momentum()
     }
 }
 
 impl Default for Player {
     fn default() -> Self {
         let midmap = (ARENA_WIDTH - PLAYER_WIDTH) / 2.0;
-        let default_position = Vec2::new(midmap, 0.0);
+        let default_position = Vec2::new(midmap, -PLAYER_HEIGHT);
         let default_direction = 1.0;
         let default_weapontype = WeaponType::BasicPistol;
         let current_weapon = Weapon::new(default_position, default_weapontype, default_direction);

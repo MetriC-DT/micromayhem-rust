@@ -16,7 +16,7 @@ mod unittests;
 pub const PLAYER_WIDTH: f32 = 32.0;
 pub const PLAYER_HEIGHT: f32 = 32.0;
 pub const PLAYER_MASS: f32 = 50.0;
-pub const BLOCK_WIDTH: f32 = 100.0;
+pub const BLOCK_WIDTH: f32 = 128.0;
 pub const BLOCK_HEIGHT: f32 = 32.0;
 
 // to be multiplied out

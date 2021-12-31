@@ -28,9 +28,9 @@ pub enum BulletType {
 pub(crate) const DEFAULT_BULLET_MASSES: [f32; BulletType::COUNT] = {
     let mut bullet_masses = [0.0; BulletType::COUNT];
 
-    bullet_masses[Pistol as usize] = 10.0;
-    bullet_masses[Rifle as usize] = 10.0;
-    bullet_masses[Sniper as usize] = 10.0;
+    bullet_masses[Pistol as usize] = 20.0;
+    bullet_masses[Rifle as usize] = 20.0;
+    bullet_masses[Sniper as usize] = 200.0;
     bullet_masses
 };
 
@@ -38,9 +38,9 @@ pub(crate) const DEFAULT_BULLET_MASSES: [f32; BulletType::COUNT] = {
 pub(crate) const DEFAULT_BULLET_SPEEDS: [f32; BulletType::COUNT] = {
     let mut bullet_speeds = [0.0; BulletType::COUNT];
 
-    bullet_speeds[Pistol as usize] = 10.0;
-    bullet_speeds[Rifle as usize] = 10.0;
-    bullet_speeds[Sniper as usize] = 10.0;
+    bullet_speeds[Pistol as usize] = 1000.0;
+    bullet_speeds[Rifle as usize] = 1000.0;
+    bullet_speeds[Sniper as usize] = 10000.0;
     bullet_speeds
 };
 
@@ -76,6 +76,14 @@ pub(crate) const ATTACK_TIMES: [u128; WeaponType::COUNT] = {
 
     times[BasicPistol as usize] = 500;
     times
+};
+
+/// types of bullets that a specific gun uses
+pub(crate) const BULLET_TYPES: [BulletType; WeaponType::COUNT] = {
+    let mut types: [BulletType; WeaponType::COUNT] = [Pistol; WeaponType::COUNT];
+
+    types[BasicPistol as usize] = Pistol;
+    types
 };
 
 
