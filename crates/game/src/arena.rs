@@ -66,7 +66,7 @@ impl Arena {
     pub fn get_blocks_iter(&self) -> impl Iterator<Item=BlockRect> + '_ {
         let mut index = 0;
 
-        return self.blocks.iter()
+        self.blocks.iter()
             .filter_map(move |blocktypeoption: &Option<BlockType>| {
                 let (r, c) = (index % VERTICAL_BLOCKS, index / VERTICAL_BLOCKS);
                 index += 1;
@@ -81,7 +81,7 @@ impl Arena {
                 } else {
                     None
                 }
-            });
+            })
     }
 
     /// changes a point in the arena to the nearest row and column as represented by the map. If
@@ -124,7 +124,6 @@ impl Arena {
     pub fn update(&mut self, dt: f32, input: &InputMask) {
         // total mass obtains mass of player + weapon.
         let total_mass = self.player.get_total_mass();
-        let player_mass = self.player.mass;
         let player_bottom = self.player.position + Vec2::new(0.0, self.player.height);
         let left_grid_position = Arena::to_row_col(player_bottom);
         let right_grid_position = Arena::to_row_col(player_bottom + Vec2::new(self.player.width, 0.0));
@@ -144,20 +143,24 @@ impl Arena {
         let mut jump = Vec2::ZERO;
         let mut run: Vec2;
         let mut drop_input: bool = false;
+        let mut standing_on_block = false;
         let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
         let has_right = input.has_mask(Input::Right) as u8 as f32;
         let direction = has_left + has_right;
-        let has_jump = input.has_mask(Input::Up) as u8 as f32;
+        let has_jump = input.has_mask(Input::Up) && self.player.jumps_left > 0;
 
         let first_rowcol_below_opt = self.find_first_rowcol_below(&left_grid_position, &right_grid_position);
 
         if let Some((row, col)) = first_rowcol_below_opt {
             lowest_block_y = Arena::get_block_row_position(row);
-            let standing_on_block = player_bottom.y == lowest_block_y;
+            standing_on_block = player_bottom.y == lowest_block_y;
 
             if standing_on_block {
                 // sets player's velocity y component to zero.
                 self.player.velocity.y = 0.0;
+
+                // resets the player's jump count.
+                self.player.jumps_left = self.player.jumps_count;
 
                 // obtains the normal force
                 block_normal = -weight;
@@ -181,12 +184,20 @@ impl Arena {
                 block_friction = -velocity_x_unit * block_friction_magnitude * Vec2::X;
                 run_friction = coeff_friction * block_normal.length() * Vec2::X;
 
-                // accelerations from player inputs
-                jump = player_mass * JUMP_ACCEL * has_jump;
-
                 // can only drop down if we are standing on block, and not on the lowest platform.
                 drop_input = input.has_mask(Input::Down) && row != VERTICAL_BLOCKS - 1;
             }
+        }
+
+        // removes one jump if not touching ground
+        if !standing_on_block {
+            self.player.jumps_left = u8::min(self.player.jumps_count - 1, self.player.jumps_left);
+        }
+
+        // accelerations from player inputs
+        // player's jump inputs
+        if has_jump {
+            jump = self.player.jump_force();
         }
 
         // Disallows any acceleration input that is in the same direction as the player's

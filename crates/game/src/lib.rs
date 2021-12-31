@@ -52,3 +52,6 @@ pub const ARENA_HEIGHT: f32 = 2.0 * VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * 
 
 /// threshold for determining if a float should be rounded to zero.
 pub const ERROR_THRESHOLD: f32 = 1e-6;
+
+/// jump cooldown in milliseconds
+pub const JUMP_COOLDOWN: u128 = 200;

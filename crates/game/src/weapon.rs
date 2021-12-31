@@ -1,4 +1,4 @@
-use crate::weaponscatalog::{WeaponType, RELOAD_TIMES, ATTACK_TIMES, BULLET_TYPES, DEFAULT_BULLET_SPEEDS, DEFAULT_BULLET_MASSES};
+use crate::weaponscatalog::{WeaponType, RELOAD_TIMES, ATTACK_TIMES, BULLET_TYPES, DEFAULT_BULLET_MASSES, BulletType, BULLET_SPEEDS};
 use core::fmt::Debug;
 use std::time::SystemTime;
 use glam::Vec2;
@@ -7,6 +7,26 @@ use WeaponStatus::*;
 
 /// contains the various implementations for all the weapons and bullets
 /// in the game.
+
+
+/// The bullet "superstruct" as a workaround for rust
+/// not having trait fields.
+pub struct Bullet {
+    position: Vec2,
+    velocity: Vec2,
+    bullettype: BulletType,
+}
+
+impl Bullet {
+    pub fn new(position: Vec2, velocity: Vec2, bullettype: BulletType) -> Self {
+        Self { position, velocity, bullettype }
+    }
+
+    pub fn get_mass(&self) -> f32 {
+        DEFAULT_BULLET_MASSES[self.bullettype as usize]
+    }
+}
+
 
 /// The weapon "superstruct" as a workaround for rust
 /// not having trait fields.
@@ -32,14 +52,6 @@ pub enum WeaponStatus {
     Ready,
     Empty,
     Discarded,
-}
-
-/// The bullet "superstruct" as a workaround for rust
-/// not having trait fields.
-pub struct Bullet {
-    position: Vec2,
-    velocity: Vec2,
-    mass: f32,
 }
 
 impl Weapon {
@@ -120,7 +132,7 @@ impl Weapon {
 
     pub(crate) fn get_bullet_momentum(&self) -> Vec2 {
         let bullettype = BULLET_TYPES[self.weapontype as usize];
-        let bulletspeed = DEFAULT_BULLET_SPEEDS[bullettype as usize];
+        let bulletspeed = BULLET_SPEEDS[self.weapontype as usize];
         let bulletmass = DEFAULT_BULLET_MASSES[bullettype as usize];
         self.direction * Vec2::X * bulletspeed * bulletmass
     }

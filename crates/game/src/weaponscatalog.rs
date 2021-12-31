@@ -4,7 +4,6 @@
 /// JSON object and just read all that in at run time. Might be more readable than this.
 use strum::EnumCount;
 use strum_macros::EnumCount;
-use crate::weapon::Weapon;
 use WeaponType::*;
 use BulletType::*;
 
@@ -32,16 +31,6 @@ pub(crate) const DEFAULT_BULLET_MASSES: [f32; BulletType::COUNT] = {
     bullet_masses[Rifle as usize] = 20.0;
     bullet_masses[Sniper as usize] = 200.0;
     bullet_masses
-};
-
-/// bullet velocities properties.
-pub(crate) const DEFAULT_BULLET_SPEEDS: [f32; BulletType::COUNT] = {
-    let mut bullet_speeds = [0.0; BulletType::COUNT];
-
-    bullet_speeds[Pistol as usize] = 1000.0;
-    bullet_speeds[Rifle as usize] = 1000.0;
-    bullet_speeds[Sniper as usize] = 10000.0;
-    bullet_speeds
 };
 
 
@@ -85,3 +74,13 @@ pub(crate) const BULLET_TYPES: [BulletType; WeaponType::COUNT] = {
     types[BasicPistol as usize] = Pistol;
     types
 };
+
+
+/// speed of the bullet that a specific can can shoot out.
+pub(crate) const BULLET_SPEEDS: [f32; WeaponType::COUNT] = {
+    let mut bullet_speeds = [0.0; WeaponType::COUNT];
+
+    bullet_speeds[BasicPistol as usize] = 1000.0;
+    bullet_speeds
+};
+

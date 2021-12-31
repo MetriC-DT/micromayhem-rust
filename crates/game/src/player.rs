@@ -1,4 +1,6 @@
-use crate::{weapon::{Weapon, WeaponStatus}, weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, GRAVITY_DEFAULT};
+use std::time::SystemTime;
+
+use crate::{weapon::{Weapon, WeaponStatus}, weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, JUMP_ACCEL, JUMP_COOLDOWN};
 use glam::Vec2;
 
 /// Since the display grid has increasing y for going lower on screen,
@@ -20,6 +22,9 @@ pub struct Player {
     pub direction: f32,
     pub mass: f32,
     pub speed_cap: f32,
+    pub jumps_count: u8,
+    pub jumps_left: u8,
+    pub last_jump_time: u128,
     default_weapontype: WeaponType,
     current_weapon: Weapon,
     team: usize,
@@ -81,6 +86,29 @@ impl Player {
         self.mass + self.current_weapon.get_mass()
     }
 
+    /// let jump_force be a function of the number of jumps left, so
+    /// subsequent midair jumps are weaker compared to a ground jump.
+    ///
+    /// if jump was unsuccessful (cooldown active, or no more jumps left),
+    /// then return the zero vector for the jump force.
+    pub(crate) fn jump_force(&mut self) -> Vec2 {
+        let curr_time = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .expect("Unable to get current time!")
+            .as_millis();
+        if curr_time - self.last_jump_time > JUMP_COOLDOWN {
+            // TODO: figure out a good function to use so double jumping results in the 
+            // same final position regardless of when the player inputted the 2nd jump input.
+            // let fraction: f32 = self.jumps_left as f32 / self.jumps_count as f32;
+            let fraction = 1.0;
+            self.jumps_left -= (self.jumps_left > 0) as u8;
+            self.last_jump_time = curr_time;
+            return fraction * self.mass * JUMP_ACCEL;
+        } else {
+            return Vec2::ZERO;
+        }
+    }
+
     /// attacks with the current weapon.
     pub(crate) fn attack(&mut self) -> bool {
         let attacked = self.current_weapon.attack();
@@ -111,13 +139,20 @@ impl Default for Player {
         let default_direction = 1.0;
         let default_weapontype = WeaponType::BasicPistol;
         let current_weapon = Weapon::new(default_position, default_weapontype, default_direction);
+        let curr_time = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .expect("Unable to get current time!")
+            .as_millis();
 
         Player {
             position: default_position,
             velocity: Vec2::ZERO,
             acceleration: Vec2::ZERO,
-            name: String::new(),
+            name: String::from("default"),
             speed_cap: PLAYER_SPEED_CAP,
+            jumps_left: 0,
+            jumps_count: 2,
+            last_jump_time: curr_time,
             width: PLAYER_WIDTH,
             height: PLAYER_HEIGHT,
             direction: 1.0,
