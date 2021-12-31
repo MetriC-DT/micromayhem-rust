@@ -45,11 +45,8 @@ pub struct Bullet {
 impl Weapon {
     pub fn new(position: Vec2, weapontype: WeaponType, direction: f32) -> Self {
         let velocity = Vec2::ZERO;
-        let acceleration = Vec2::ZERO;
         let i = weapontype as usize;
         let bullets = DEFAULT_BULLET_COUNTS[i];
-        let mass = DEFAULT_MASSES[i];
-        let discarded = false;
         let curr_time = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .expect("Unable to get current time!")
