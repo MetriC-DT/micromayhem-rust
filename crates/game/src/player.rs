@@ -24,7 +24,7 @@ pub struct Player {
     pub speed_cap: f32,
     pub jumps_count: u8,
     pub jumps_left: u8,
-    pub last_jump_time: u128,
+    last_jump_time: u128,
     default_weapontype: WeaponType,
     current_weapon: Weapon,
     team: usize,
@@ -90,20 +90,26 @@ impl Player {
     /// subsequent midair jumps are weaker compared to a ground jump.
     ///
     /// if jump was unsuccessful (cooldown active, or no more jumps left),
-    /// then return the zero vector for the jump force.
+    /// then return the zero vector for the jump force. Automatically docks
+    /// one from the `jumps_left` variable if possible.
     pub(crate) fn jump_force(&mut self) -> Vec2 {
         let curr_time = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .expect("Unable to get current time!")
             .as_millis();
-        if curr_time - self.last_jump_time > JUMP_COOLDOWN {
+
+        let still_has_jumps = self.jumps_left > 0;
+        let time_since_last_jump = curr_time - self.last_jump_time;
+
+        if still_has_jumps && time_since_last_jump > JUMP_COOLDOWN {
             // TODO: figure out a good function to use so double jumping results in the 
             // same final position regardless of when the player inputted the 2nd jump input.
             // let fraction: f32 = self.jumps_left as f32 / self.jumps_count as f32;
-            let fraction = 1.0;
-            self.jumps_left -= (self.jumps_left > 0) as u8;
             self.last_jump_time = curr_time;
-            return fraction * self.mass * JUMP_ACCEL;
+            self.jumps_left -= 1;
+
+            let multiplier: f32 = 1.0;
+            return multiplier * self.mass * JUMP_ACCEL;
         } else {
             return Vec2::ZERO;
         }

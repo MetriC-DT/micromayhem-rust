@@ -36,5 +36,3 @@ impl Default for InputMask {
         Self::new()
     }
 }
-
-

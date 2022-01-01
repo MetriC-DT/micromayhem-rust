@@ -1,6 +1,5 @@
 use crate::ERROR_THRESHOLD;
 use crate::GRAVITY_DEFAULT;
-use crate::JUMP_ACCEL;
 use crate::AIR_FRICTION;
 use crate::ARENA_HEIGHT;
 use crate::HORIZONTAL_PADDING;
@@ -147,41 +146,43 @@ impl Arena {
         let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
         let has_right = input.has_mask(Input::Right) as u8 as f32;
         let direction = has_left + has_right;
-        let has_jump = input.has_mask(Input::Up) && self.player.jumps_left > 0;
+        let has_jump = input.has_mask(Input::Up);
 
         let first_rowcol_below_opt = self.find_first_rowcol_below(&left_grid_position, &right_grid_position);
 
         if let Some((row, col)) = first_rowcol_below_opt {
+            // we are standing on block if y position is lowest and player is falling.
             lowest_block_y = Arena::get_block_row_position(row);
-            standing_on_block = player_bottom.y == lowest_block_y;
+            standing_on_block = player_bottom.y == lowest_block_y && self.player.velocity.y <= 0.0;
 
             if standing_on_block {
                 // sets player's velocity y component to zero.
                 self.player.velocity.y = 0.0;
 
-                // resets the player's jump count.
-                self.player.jumps_left = self.player.jumps_count;
-
                 // obtains the normal force
                 block_normal = -weight;
 
-                // obtains the frictional force.
+                // obtains the frictional force, and point its direction to opposite velocity.
                 let xvel = self.player.velocity.x;
-                let velocity_x_unit: f32 = normalize_float(xvel);
+                let fric_direction: f32 = -normalize_float(xvel);
 
                 // if player's velocity is normalized to be 0, then we can directly set it to
                 // prevent floating point rounding errors.
-                self.player.velocity.x *= velocity_x_unit.abs();
+                self.player.velocity.x *= fric_direction.abs();
 
                 // we are already on a block, so the blocktype should not be None
                 let blocktype = self.get_blocktype_at(row, col).expect("BlockType should not be None");
 
                 let coeff_friction = block::get_block_friction(blocktype);
 
-                // minimizes so we do not overshoot
+                // minimizes so we do not overshoot (compares the force to reduce the player's
+                // speed down to zero against the frictional force, and chooses the minimum)
                 let max_allowed_friction_magnitude = xvel.abs() * total_mass / dt;
                 let block_friction_magnitude = f32::min(coeff_friction * block_normal.length(), max_allowed_friction_magnitude);
-                block_friction = -velocity_x_unit * block_friction_magnitude * Vec2::X;
+                block_friction = fric_direction * block_friction_magnitude * Vec2::X;
+
+                // we update run_friction: the force to get the player moving.
+                // This is only relevant to when player inputs their left/right movement commands.
                 run_friction = coeff_friction * block_normal.length() * Vec2::X;
 
                 // can only drop down if we are standing on block, and not on the lowest platform.
@@ -189,9 +190,11 @@ impl Arena {
             }
         }
 
-        // removes one jump if not touching ground
+        // removes one jump if not touching ground. Else resets the player's jump count.
         if !standing_on_block {
             self.player.jumps_left = u8::min(self.player.jumps_count - 1, self.player.jumps_left);
+        } else {
+            self.player.jumps_left = self.player.jumps_count;
         }
 
         // accelerations from player inputs
@@ -203,11 +206,10 @@ impl Arena {
         // Disallows any acceleration input that is in the same direction as the player's
         // velocity if the player's velocity is already above its speed_cap.
         //
-        // Therefore, if they are already at the max speed, then just keep their run
-        // acceleration the same magnitude as the friction force.
-        //
-        // TODO: A better solution might employ correcting the run force by calculating its difference
-        // against the maximum allowed acceleration to reach the speed cap.
+        // README: A better solution might employ correcting the run force by calculating its difference
+        // against the maximum allowed acceleration to reach the speed cap rather than just zeroing
+        // out the run input. This would probably result in a more "consistent" usage of the
+        // speed_cap.
         let multiplier = 2.0;
         run = multiplier * run_friction * direction;
         if (run.x * self.player.velocity.x > 0.0) && (self.player.velocity.x.abs() >= self.player.speed_cap) {
@@ -219,19 +221,23 @@ impl Arena {
         // recoil will be a fraction of the impulse over time rather than the entire dp/dt.
         if input.has_mask(Input::Shoot) && self.player.attack() {
             gun_recoil = -self.player.get_bullet_momentum() / dt;
+            // TODO: create a bullet at the player's position and velocity.
         }
 
-        let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
+        // TODO: updates all of the bullets' positions.
 
-        // updates the player after calculating the applied forces above.
+        // updates the player after calculating all the applied forces above.
+        let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
         self.player.update(dt, lowest_block_y, total_force, drop_input, direction);
 
-        // TODO: Obtains the location of all the other players.
+        // TODO: From network, obtains the location of all the other players.
     }
 
     /// returns the first (row, col) that has a block below the current player. If no such block exists,
     /// then returns None for the first argument. Bool represents whether the left or right edge
     /// of the player found the first block.
+    ///
+    /// FIXME: This only works if the player's width is less than that of the block's width.
     fn find_first_rowcol_below(&self,
                             left_grid_position: &Option<(usize, usize)>,
                             right_grid_position: &Option<(usize, usize)>) -> Option<(usize, usize)> {
