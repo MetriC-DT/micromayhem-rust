@@ -174,16 +174,17 @@ impl Arena {
                 let blocktype = self.get_blocktype_at(row, col).expect("BlockType should not be None");
 
                 let coeff_friction = block::get_block_friction(blocktype);
+                let block_normal_magnitude = block_normal.y.abs();
 
                 // minimizes so we do not overshoot (compares the force to reduce the player's
                 // speed down to zero against the frictional force, and chooses the minimum)
                 let max_allowed_friction_magnitude = xvel.abs() * total_mass / dt;
-                let block_friction_magnitude = f32::min(coeff_friction * block_normal.length(), max_allowed_friction_magnitude);
+                let block_friction_magnitude = f32::min(coeff_friction * block_normal_magnitude, max_allowed_friction_magnitude);
                 block_friction = fric_direction * block_friction_magnitude * Vec2::X;
 
                 // we update run_friction: the force to get the player moving.
                 // This is only relevant to when player inputs their left/right movement commands.
-                run_friction = coeff_friction * block_normal.length() * Vec2::X;
+                run_friction = coeff_friction * block_normal_magnitude * Vec2::X;
 
                 // can only drop down if we are standing on block, and not on the lowest platform.
                 drop_input = input.has_mask(Input::Down) && row != VERTICAL_BLOCKS - 1;
