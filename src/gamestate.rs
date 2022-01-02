@@ -77,8 +77,18 @@ impl EventHandler for GameState {
 
         let [x, y] = player.position.to_array();
         let playerrect = ggez::graphics::Rect {x: x as f32, y: y as f32, w: player.width as f32, h: player.height as f32};
-        let meshrect = Mesh::new_rectangle(ctx, DrawMode::fill(), playerrect, Color::BLUE).unwrap();
+        let meshrect = Mesh::new_rectangle(ctx, DrawMode::fill(), playerrect, Color::BLUE)?;
         graphics::draw(ctx, &meshrect, DrawParam::default().dest(offset))?;
+
+        // draws bullets
+        for (_, bullet) in self.arena.bullets_iterator() {
+            let [x, y] = bullet.get_position().to_array();
+            let w = 9.0;
+            let h = 9.0;
+            let b = ggez::graphics::Rect {x, y, w, h};
+            let mesh = Mesh::new_rectangle(ctx, DrawMode::fill(), b, Color::RED)?;
+            graphics::draw(ctx, &mesh, DrawParam::default().dest(offset))?;
+        }
 
         graphics::present(ctx)
     }

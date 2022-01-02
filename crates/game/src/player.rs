@@ -27,9 +27,9 @@ pub struct Player {
     last_jump_time: u128,
     default_weapontype: WeaponType,
     current_weapon: Weapon,
-    team: usize,
+    team: u8,
     damage_multiplier: f32,
-    lives: usize,
+    lives: u8,
 }
 
 impl Player {
@@ -127,8 +127,10 @@ impl Player {
         status_after_attack
     }
 
-    pub(crate) fn create_new_bullet(&self, id: usize) -> Bullet {
-        let position = self.position;
+    pub(crate) fn create_new_bullet(&self, id: u16) -> Bullet {
+        let position_x = self.position.x + PLAYER_WIDTH / 2.0;
+        let position_y = self.position.y + PLAYER_HEIGHT / 2.0;
+        let position = Vec2::new(position_x, position_y);
         let velocity = self.current_weapon.get_bullet_speed() * Vec2::X * self.direction;
         let bullettype = self.current_weapon.get_bullet_type();
         let team = self.team;

@@ -28,10 +28,10 @@ use glam::Vec2;
 #[derive(Debug)]
 pub struct Arena {
     map: Map,
-    bullets: HashMap<usize, Bullet>,
+    bullets: HashMap<u16, Bullet>,
     pub blocks: [Option<BlockType>; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS],
     pub player: Player,
-    bulletcount: usize,
+    bulletcount: u16,
 }
 
 impl Default for Arena {
@@ -229,14 +229,14 @@ impl Arena {
         // TODO: updates all of the bullets' positions. If bullets fly off the map, then remove it
         // from the collection.
         // TODO: Initialize WITH_CAPACITY = number of players
-        let mut to_remove: Vec<usize> = Vec::with_capacity(1);
+        let mut to_remove: Vec<u16> = Vec::with_capacity(1);
         for (id, bullet) in self.bullets_iterator_mut() {
             bullet.update(dt);
 
             let position_x = bullet.get_position().x;
             // removes bullet when flies off the arena.
             if position_x <= 0.0 || position_x >= ARENA_WIDTH {
-                to_remove.insert(to_remove.len(), *id);
+                to_remove.insert(to_remove.len(), *id as u16);
             }
         }
 
@@ -273,12 +273,12 @@ impl Arena {
     }
 
     /// mutable iterator through all the bullets on the map
-    fn bullets_iterator_mut(&mut self) -> impl Iterator<Item = (&usize, &mut Bullet)> + '_ {
+    fn bullets_iterator_mut(&mut self) -> impl Iterator<Item = (&u16, &mut Bullet)> + '_ {
         self.bullets.iter_mut()
     }
 
     /// iterator through all the bullets on the map
-    pub fn bullets_iterator(&self) -> impl Iterator<Item = (&usize, &Bullet)> + '_ {
+    pub fn bullets_iterator(&self) -> impl Iterator<Item = (&u16, &Bullet)> + '_ {
         self.bullets.iter()
     }
 

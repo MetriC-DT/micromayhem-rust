@@ -16,23 +16,23 @@ pub struct Bullet {
     position: Vec2,
     velocity: Vec2,
     bullettype: BulletType,
-    team: usize,
-    id: usize,
+    team: u8,
+    id: u16,
 }
 
 impl Bullet {
-    pub fn new(position: Vec2, velocity: Vec2, bullettype: BulletType, team: usize, id: usize) -> Self {
+    pub fn new(position: Vec2, velocity: Vec2, bullettype: BulletType, team: u8, id: u16) -> Self {
         Self { position, velocity, bullettype, team, id }
     }
     pub fn get_mass(&self) -> f32 {
         DEFAULT_BULLET_MASSES[self.bullettype as usize]
     }
 
-    pub fn get_team(&self) -> usize {
+    pub fn get_team(&self) -> u8 {
         self.team
     }
 
-    pub fn get_id(&self) -> usize {
+    pub fn get_id(&self) -> u16 {
         self.id
     }
 
