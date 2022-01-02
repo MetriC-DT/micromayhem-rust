@@ -226,7 +226,7 @@ impl Arena {
             run = Vec2::ZERO;
         }
 
-        // TODO: updates all of the bullets' positions. If bullets fly off the map, then remove it
+        // Updates all of the bullets' positions. If bullets fly off the map, then remove it
         // from the collection.
         // TODO: Initialize WITH_CAPACITY = number of players
         let mut to_remove: Vec<u16> = Vec::with_capacity(1);
@@ -235,7 +235,7 @@ impl Arena {
 
             let position_x = bullet.get_position().x;
             // removes bullet when flies off the arena.
-            if position_x <= 0.0 || position_x >= ARENA_WIDTH {
+            if position_x < 0.0 || position_x > ARENA_WIDTH {
                 to_remove.insert(to_remove.len(), *id as u16);
             }
         }
