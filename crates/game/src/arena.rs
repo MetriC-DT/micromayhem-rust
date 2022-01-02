@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+use crate::ARENA_WIDTH;
 use crate::ERROR_THRESHOLD;
 use crate::GRAVITY_DEFAULT;
 use crate::AIR_FRICTION;
@@ -16,6 +19,8 @@ use crate::map::VERTICAL_BLOCKS;
 use crate::map::HORIZONTAL_BLOCKS;
 use crate::input::Input;
 use crate::player::Player;
+use crate::weapon::Bullet;
+use crate::weapon::WeaponStatus;
 use glam::Vec2;
 
 
@@ -23,8 +28,10 @@ use glam::Vec2;
 #[derive(Debug)]
 pub struct Arena {
     map: Map,
+    bullets: HashMap<usize, Bullet>,
     pub blocks: [Option<BlockType>; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS],
     pub player: Player,
+    bulletcount: usize,
 }
 
 impl Default for Arena {
@@ -36,7 +43,9 @@ impl Default for Arena {
 impl Arena {
     pub fn new(map: Map, player: Player) -> Self {
         let blocks = map.to_blocktypes();
-        Self { map, player, blocks }
+        let bullets = HashMap::new();
+        let bulletcount = 0;
+        Self { map, player, blocks, bullets, bulletcount }
     }
 
     /// obtains the block type at the specified row and column, or None if it doesn't exist.
@@ -201,7 +210,7 @@ impl Arena {
         // accelerations from player inputs
         // player's jump inputs
         if has_jump {
-            jump = self.player.jump_force();
+            jump = self.player.jump_force_and_decrement();
         }
 
         // Disallows any acceleration input that is in the same direction as the player's
@@ -217,21 +226,60 @@ impl Arena {
             run = Vec2::ZERO;
         }
 
+        // TODO: updates all of the bullets' positions. If bullets fly off the map, then remove it
+        // from the collection.
+        // TODO: Initialize WITH_CAPACITY = number of players
+        let mut to_remove: Vec<usize> = Vec::with_capacity(1);
+        for (id, bullet) in self.bullets_iterator_mut() {
+            bullet.update(dt);
+
+            let position_x = bullet.get_position().x;
+            // removes bullet when flies off the arena.
+            if position_x <= 0.0 || position_x >= ARENA_WIDTH {
+                to_remove.insert(to_remove.len(), *id);
+            }
+        }
+
+        for id in to_remove {
+            self.bullets.remove(&id);
+        }
+
         // gets player shooting bullet recoil.
         // Since the recoil should punish a player less than a knockback, the force exerted by
         // recoil will be a fraction of the impulse over time rather than the entire dp/dt.
-        if input.has_mask(Input::Shoot) && self.player.attack() {
-            gun_recoil = -self.player.get_bullet_momentum() / dt;
-            // TODO: create a bullet at the player's position and velocity.
-        }
+        if input.has_mask(Input::Shoot) {
+            let attack_status =  self.player.attack();
 
-        // TODO: updates all of the bullets' positions.
+            if attack_status == WeaponStatus::FireSuccess {
+                gun_recoil = -self.player.get_bullet_momentum() / dt;
+
+                // create a bullet at the player's position, velocity and direction.
+                let bullet = self.player.create_new_bullet(self.bulletcount);
+                self.bullets.insert(bullet.get_id(), bullet);
+                self.bulletcount += 1;
+            }
+
+            else if attack_status == WeaponStatus::Empty {
+                // TODO: sets the recoil correctly when player throws the weapon.
+                gun_recoil = Vec2::ZERO;
+            }
+        }
 
         // updates the player after calculating all the applied forces above.
         let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
         self.player.update(dt, lowest_block_y, total_force, drop_input, direction);
 
         // TODO: From network, obtains the location of all the other players.
+    }
+
+    /// mutable iterator through all the bullets on the map
+    fn bullets_iterator_mut(&mut self) -> impl Iterator<Item = (&usize, &mut Bullet)> + '_ {
+        self.bullets.iter_mut()
+    }
+
+    /// iterator through all the bullets on the map
+    pub fn bullets_iterator(&self) -> impl Iterator<Item = (&usize, &Bullet)> + '_ {
+        self.bullets.iter()
     }
 
     /// returns the first (row, col) that has a block below the current player. If no such block exists,

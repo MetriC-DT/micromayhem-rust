@@ -1,4 +1,4 @@
-use crate::weaponscatalog::{WeaponType, RELOAD_TIMES, ATTACK_TIMES, BULLET_TYPES, DEFAULT_BULLET_MASSES, BulletType, BULLET_SPEEDS};
+use crate::weaponscatalog::{ATTACK_TIMES, BULLET_TYPES, DEFAULT_BULLET_MASSES, BulletType, BULLET_SPEEDS, RELOAD_TIMES, WeaponType};
 use core::fmt::Debug;
 use std::time::SystemTime;
 use glam::Vec2;
@@ -11,19 +11,37 @@ use WeaponStatus::*;
 
 /// The bullet "superstruct" as a workaround for rust
 /// not having trait fields.
+#[derive(Debug)]
 pub struct Bullet {
     position: Vec2,
     velocity: Vec2,
     bullettype: BulletType,
+    team: usize,
+    id: usize,
 }
 
 impl Bullet {
-    pub fn new(position: Vec2, velocity: Vec2, bullettype: BulletType) -> Self {
-        Self { position, velocity, bullettype }
+    pub fn new(position: Vec2, velocity: Vec2, bullettype: BulletType, team: usize, id: usize) -> Self {
+        Self { position, velocity, bullettype, team, id }
     }
-
     pub fn get_mass(&self) -> f32 {
         DEFAULT_BULLET_MASSES[self.bullettype as usize]
+    }
+
+    pub fn get_team(&self) -> usize {
+        self.team
+    }
+
+    pub fn get_id(&self) -> usize {
+        self.id
+    }
+
+    pub fn get_position(&self) -> Vec2 {
+        self.position
+    }
+
+    pub fn update(& mut self, dt: f32) {
+        self.position += self.velocity * dt;
     }
 }
 
@@ -52,6 +70,7 @@ pub enum WeaponStatus {
     Ready,
     Empty,
     Discarded,
+    FireSuccess,
 }
 
 impl Weapon {
@@ -83,9 +102,10 @@ impl Weapon {
     /// calls the specific attack function for a weapon of `self.weapontype` only if the
     /// attack has passed the attack cooldown timer, and the gun already reloaded.
     ///
-    /// If the attack was successfully executed, then attack returns true, otherwise, 
-    /// it will return false. Successful execution means attack is not on cooldown or reloaded.
-    pub(crate) fn attack(&mut self) -> bool {
+    /// If the attack was successfully executed, then attack returns FireSuccess, otherwise, 
+    /// it will return WeaponStatus::Empty if there is no more bullets left, but the player can 
+    /// attack, or WeaponStatus::Cooldown if the player cannot attack due to cooldown.
+    pub(crate) fn attack(&mut self) -> WeaponStatus {
         let i = self.weapontype as usize;
 
         let currtime = SystemTime::now()
@@ -101,12 +121,12 @@ impl Weapon {
             self.last_attack_time = currtime;
             self.bullets -= 1;
             self.status = Cooldown;
-            true
+            return WeaponStatus::FireSuccess;
         } else if can_attack {
             self.status = Empty;
-            true
+            return WeaponStatus::Empty;
         } else {
-            false
+            return WeaponStatus::Cooldown;
         }
     }
 
@@ -126,18 +146,23 @@ impl Weapon {
         self.position = position;
     }
 
+    /// sets the direction the weapon is facing.
     pub(crate) fn set_direction(&mut self, direction: f32) {
         self.direction = direction;
     }
 
+    pub(crate) fn get_bullet_type(&self) -> BulletType {
+        BULLET_TYPES[self.weapontype as usize]
+    }
+
     pub(crate) fn get_bullet_momentum(&self) -> Vec2 {
-        let bullettype = BULLET_TYPES[self.weapontype as usize];
-        let bulletspeed = BULLET_SPEEDS[self.weapontype as usize];
+        let bullettype = self.get_bullet_type();
+        let bulletspeed = self.get_bullet_speed();
         let bulletmass = DEFAULT_BULLET_MASSES[bullettype as usize];
         self.direction * Vec2::X * bulletspeed * bulletmass
     }
 
-    pub(crate) fn has_status(&self, status: WeaponStatus) -> bool {
-        return self.status == status;
+    pub(crate) fn get_bullet_speed(&self) -> f32 {
+        BULLET_SPEEDS[self.weapontype as usize]
     }
 }

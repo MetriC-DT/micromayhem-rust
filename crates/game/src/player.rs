@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-use crate::{weapon::{Weapon, WeaponStatus}, weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, JUMP_ACCEL, JUMP_COOLDOWN};
+use crate::{weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, JUMP_ACCEL, JUMP_COOLDOWN, weapon::{Weapon, WeaponStatus, Bullet}};
 use glam::Vec2;
 
 /// Since the display grid has increasing y for going lower on screen,
@@ -92,7 +92,7 @@ impl Player {
     /// if jump was unsuccessful (cooldown active, or no more jumps left),
     /// then return the zero vector for the jump force. Automatically docks
     /// one from the `jumps_left` variable if possible.
-    pub(crate) fn jump_force(&mut self) -> Vec2 {
+    pub(crate) fn jump_force_and_decrement(&mut self) -> Vec2 {
         let curr_time = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .expect("Unable to get current time!")
@@ -116,18 +116,28 @@ impl Player {
     }
 
     /// attacks with the current weapon.
-    pub(crate) fn attack(&mut self) -> bool {
-        let attacked = self.current_weapon.attack();
+    pub(crate) fn attack(&mut self) -> WeaponStatus {
+        let status_after_attack = self.current_weapon.attack();
 
         // if weapon is empty, discard on an attack command.
-        if attacked && self.current_weapon.has_status(WeaponStatus::Empty) {
-            self.throw();
+        if status_after_attack == WeaponStatus::Empty {
+            self.throw_current_weapon();
         }
 
-        return attacked;
+        status_after_attack
     }
 
-    pub(crate) fn throw(&mut self) {
+    pub(crate) fn create_new_bullet(&self, id: usize) -> Bullet {
+        let position = self.position;
+        let velocity = self.current_weapon.get_bullet_speed() * Vec2::X * self.direction;
+        let bullettype = self.current_weapon.get_bullet_type();
+        let team = self.team;
+
+        Bullet::new(position, velocity, bullettype, team, id)
+    }
+
+    /// throws the current weapon away and create a new weapon from the player's default.
+    pub(crate) fn throw_current_weapon(&mut self) {
         // TODO: discard velocity should be different from player's velocity.
         self.current_weapon.discard(self.velocity);
         self.current_weapon = Weapon::new(self.position, self.default_weapontype, self.direction);
