@@ -29,14 +29,17 @@ use glam::Vec2;
 pub struct Arena {
     map: Map,
     bullets: HashMap<u16, Bullet>,
-    pub blocks: [Option<BlockType>; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS],
-    pub player: Player,
+    blocks: [Option<BlockType>; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS],
+    player: Player,
     bulletcount: u16,
+    other_players: Vec<Player>
 }
 
 impl Default for Arena {
     fn default() -> Self {
-        Arena::new(Map::default(), Player::default())
+        let mut default_arena = Arena::new(Map::default(), Player::default());
+        default_arena.add_player(Player::default());
+        default_arena
     }
 }
 
@@ -45,7 +48,8 @@ impl Arena {
         let blocks = map.to_blocktypes();
         let bullets = HashMap::new();
         let bulletcount = 0;
-        Self { map, player, blocks, bullets, bulletcount }
+        let other_players = Vec::with_capacity(3);
+        Self { map, player, blocks, bullets, bulletcount, other_players }
     }
 
     /// obtains the block type at the specified row and column, or None if it doesn't exist.
@@ -58,6 +62,26 @@ impl Arena {
         let y = Arena::get_block_row_position(row);
         let x = Arena::get_block_col_position(col);
         Vec2::new(x, y)
+    }
+
+    /// adds a new player to the arena.
+    pub fn add_player(&mut self, player: Player) {
+        let position = self.other_players.len();
+        self.other_players.insert(position, player);
+    }
+
+    /// gets an iterator over all of the other players.
+    pub fn get_other_players_iter(&self) -> impl Iterator<Item=&Player> + '_ {
+        self.other_players.iter()
+    }
+
+    /// updates the other players of the arena.
+    ///
+    /// TODO: probably grab data from network here. We might only need the player's position
+    fn update_other_players(&mut self, dt: f32) {
+        for p in self.other_players.iter_mut() {
+            p.update(dt, ARENA_HEIGHT, Vec2::Y * 1000.0, false, 1.0);
+        }
     }
 
     /// obtains the position of the row as f32.
@@ -270,6 +294,7 @@ impl Arena {
         self.player.update(dt, lowest_block_y, total_force, drop_input, direction);
 
         // TODO: From network, obtains the location of all the other players.
+        self.update_other_players(dt);
     }
 
     /// mutable iterator through all the bullets on the map
@@ -280,6 +305,11 @@ impl Arena {
     /// iterator through all the bullets on the map
     pub fn bullets_iterator(&self) -> impl Iterator<Item = (&u16, &Bullet)> + '_ {
         self.bullets.iter()
+    }
+
+    /// obtains a reference to the player of the arena.
+    pub fn get_player(&self) -> &Player {
+        &self.player
     }
 
     /// returns the first (row, col) that has a block below the current player. If no such block exists,

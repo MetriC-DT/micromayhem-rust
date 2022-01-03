@@ -1,3 +1,4 @@
+use game::player::Player;
 use game::{ARENA_WIDTH, ARENA_HEIGHT};
 use game::arena::Arena;
 use game::block::BlockRect;
@@ -6,6 +7,7 @@ use ggez::Context;
 use ggez::event::KeyCode;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam, Rect};
+use glam::Vec2;
 use crate::BACKGROUND_COLOR;
 use crate::viewport::Viewport;
 use gui::spriteloader::Atlas;
@@ -48,6 +50,14 @@ impl GameState {
         let inputmask = InputMask::new();
         GameState {arena, mapmesh, atlas, inputmask}
     }
+
+    pub fn draw_player(ctx: &mut ggez::Context, player: &Player, offset: Vec2, color: Color) -> GameResult {
+        let [x, y] = player.position.to_array();
+        let playerrect = ggez::graphics::Rect {x, y, w: player.width, h: player.height};
+        let meshrect = Mesh::new_rectangle(ctx, DrawMode::fill(), playerrect, color)?;
+        graphics::draw(ctx, &meshrect, DrawParam::default().dest(offset))?;
+        Ok(())
+    }
 }
 
 
@@ -68,17 +78,18 @@ impl EventHandler for GameState {
         graphics::clear(ctx, Color::from_rgb_u32(BACKGROUND_COLOR));
 
         // gets new viewport to find where to position the camera.
-        let player = &self.arena.player;
+        let player = self.arena.get_player();
         let viewport: Viewport = Viewport::get_viewport_on_player(player, ctx);
         let offset = viewport.get_offset();
 
         // draws everything else.
         graphics::draw(ctx, &self.mapmesh, DrawParam::default().dest(offset))?;
 
-        let [x, y] = player.position.to_array();
-        let playerrect = ggez::graphics::Rect {x: x as f32, y: y as f32, w: player.width as f32, h: player.height as f32};
-        let meshrect = Mesh::new_rectangle(ctx, DrawMode::fill(), playerrect, Color::BLUE)?;
-        graphics::draw(ctx, &meshrect, DrawParam::default().dest(offset))?;
+        GameState::draw_player(ctx, player, offset, Color::BLUE)?;
+
+        for p in self.arena.get_other_players_iter() {
+            GameState::draw_player(ctx, p, offset, Color::GREEN)?;
+        }
 
         // draws bullets
         for (_, bullet) in self.arena.bullets_iterator() {

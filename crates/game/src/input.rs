@@ -11,7 +11,7 @@ pub enum Input {
 }
 
 #[derive(Debug)]
-pub struct InputMask(u16);
+pub struct InputMask(u8);
 
 impl InputMask {
     pub fn new() -> Self {
@@ -34,5 +34,17 @@ impl InputMask {
 impl Default for InputMask {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Into<u8> for InputMask {
+    fn into(self) -> u8 {
+        self.0
+    }
+}
+
+impl From<u8> for InputMask {
+    fn from(inputdata: u8) -> Self {
+        Self(inputdata)
     }
 }
