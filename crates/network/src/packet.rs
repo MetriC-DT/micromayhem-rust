@@ -13,9 +13,9 @@ pub const SEQUENCE_BYTES: usize = size_of::<u16>();
 pub const BITFIELD_BYTES: usize = size_of::<u32>();
 
 /// Number of bytes per packet.
-pub const PACKET_BYTES: usize = DATA_BYTES + PROTOCOL_ID_BYTES;
+pub const PACKET_BYTES: usize = size_of::<Packet>();
 
-/// Type alias for protocol id, a 32 bit header tag on every packet.
+/// Type alias for protocol id, a 16 bit header tag on every packet.
 pub type ProtocolId = u16;
 
 
@@ -34,7 +34,7 @@ pub type ProtocolId = u16;
 /// Therefore, `sequence` should be incremented by 1 on every packet send.
 ///
 /// More information on the algorithm and implementation can be found at:
-/// https://gafferongames.com/post/reliability_ordering_and_congestion_avoidance_over_udp/
+/// [Gaffer on Games](https://gafferongames.com/post/reliability_ordering_and_congestion_avoidance_over_udp/)
 pub struct Packet {
     protocol_id: ProtocolId,
     sequence: u16,
@@ -81,12 +81,30 @@ impl Packet {
     pub fn verify(&self, id: ProtocolId) -> bool {
         self.protocol_id == id
     }
+
+    /// returns true if this packet is more recent than another packet (comparison of 
+    /// sequence numbers). The sequence number should allow for overflow wrap around.
+    pub fn is_more_recent_than(&self, other: &Packet) -> bool {
+        self.compare_recency(other.sequence)
+    }
+
+    /// returns true if this packet is more recent than another packet (comparison of 
+    /// sequence numbers). The sequence number should allow for overflow wrap around.
+    pub fn compare_recency(&self, otherseq: u16) -> bool {
+        let tolerance = u16::MAX / 2 + 1;
+        let (s1, s2) = (self.sequence, otherseq);
+        return ( (s1 > s2) && (s1 - s2 <= tolerance) ) ||
+            ( (s1 < s2) && (s2 - s1 > tolerance ) );
+    }
 }
 
 impl Into<Vec<u8>> for Packet {
     fn into(self) -> Vec<u8> {
         // protocol
-        let mut packet_bytes = self.protocol_id.to_be_bytes().to_vec();
+        let mut packet_bytes: Vec<u8> = self.protocol_id
+            .to_be_bytes()
+            .into_iter()
+            .collect();
 
         // sequence
         packet_bytes.extend_from_slice(&self.sequence.to_be_bytes());
@@ -144,7 +162,7 @@ impl From<Vec<u8>> for Packet {
 
 
         // README: if unable to generate data, then fill in data with pure zeroes.
-        let data_bytes = &bytes[start..].try_into();
+        let data_bytes = &bytes[start..start+DATA_BYTES].try_into();
         let data: [u8; DATA_BYTES] = data_bytes.unwrap_or_else(|_| [0; DATA_BYTES]);
 
 

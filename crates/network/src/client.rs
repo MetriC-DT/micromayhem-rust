@@ -1,8 +1,11 @@
 use std::net::{UdpSocket, SocketAddr};
 use std::io::Result;
 
-use game::arena::Arena;
+use crate::packet::{Packet, PACKET_BYTES};
 
+/// Wrapper for the UDP client socket. Implementation of orderliness
+/// and "reliability" based on the 
+/// [Gaffer on Games articles](https://gafferongames.com/post/reliability_ordering_and_congestion_avoidance_over_udp/)
 pub struct Client {
     socket: UdpSocket,
 }
@@ -20,36 +23,26 @@ impl Client {
         Ok(())
     }
 
+    /// obtains the raw socket of this client.
     pub fn get_socket(&self) -> &UdpSocket {
         &self.socket
     }
 
-    /// sends the data stripped from the arena to the server.
-    /// FIXME - sends compressed pertinent information. Probably more than just keypresses.
-    pub fn send_data(&self, arena: &Arena) -> Result<()> {
-        let pos = arena.get_player().position;
-        let [x, y] = pos.to_array();
-        let mut data = x.to_be_bytes().to_vec();
-        let mut ybytes = y.to_be_bytes().to_vec();
-        data.append(&mut ybytes);
-
-        self.socket.send(&data)?;
+    /// sends the data contained in a packet to a server.
+    pub fn send_data(&self, data: Packet) -> Result<()> {
+        let bytes: Vec<u8> = data.into();
+        self.socket.send(&bytes)?;
         Ok(())
     }
 
     /// TODO - receives and parses data properly.
-    pub fn receive(&self) -> Result<[f32; 2]> {
-        const NUMBYTES: usize = 8;
-        let mut data: [u8; NUMBYTES] = [0; NUMBYTES];
-        let bytesread = self.socket.recv(&mut data)?;
+    pub fn receive(&self) -> Result<Packet> {
+        let mut recv_buffer: [u8; PACKET_BYTES] = [0; PACKET_BYTES];
+        self.socket.recv(&mut recv_buffer)?;
 
-        // TODO: write a from data type.
-        let mut xbytes: [u8; 4] = [0; 4];
-        let mut ybytes: [u8; 4] = [0; 4];
-        xbytes.copy_from_slice(&data[0..4]);
-        ybytes.copy_from_slice(&data[4..8]);
-        let x = f32::from_be_bytes(xbytes);
-        let y = f32::from_be_bytes(ybytes);
-        Ok([x, y])
+        let bytes: Vec<u8> = recv_buffer.into_iter().collect();
+        let packet = Packet::from(bytes);
+
+        Ok(packet)
     }
 }

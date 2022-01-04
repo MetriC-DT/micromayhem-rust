@@ -1,4 +1,4 @@
-use crate::packet::{DATA_BYTES, Packet, PROTOCOL_ID_BYTES, ProtocolId, SEQUENCE_BYTES};
+use crate::packet::{Packet, ProtocolId, DATA_BYTES};
 
 #[test]
 fn test_init() {
@@ -46,4 +46,20 @@ fn test_id_no_match() {
     let packet = Packet::new(protocol_id, sequence, ack, ackbitfield, data);
 
     assert_eq!(packet.get_data(protocol_id + 1), None);
+}
+
+#[test]
+fn test_recency() {
+    let s1 = 3;
+    let s2 = 15;
+    let protocol_id = 14;
+    let data: [u8; DATA_BYTES] = [u8::MAX; DATA_BYTES];
+    let ack: u16 = 0;
+    let ackbitfield: u32 = 0;
+
+    let packet1 = Packet::new(protocol_id, s1, ack, ackbitfield, data);
+    let packet2 = Packet::new(protocol_id, s2, ack, ackbitfield, data);
+
+    assert!(packet2.is_more_recent_than(&packet1));
+    assert!(!packet1.is_more_recent_than(&packet2));
 }
