@@ -66,8 +66,7 @@ impl Arena {
 
     /// adds a new player to the arena.
     pub fn add_player(&mut self, player: Player) {
-        let position = self.other_players.len();
-        self.other_players.insert(position, player);
+        self.other_players.push(player);
     }
 
     /// gets an iterator over all of the other players.
@@ -260,7 +259,7 @@ impl Arena {
             let position_x = bullet.get_position().x;
             // removes bullet when flies off the arena.
             if position_x < 0.0 || position_x > ARENA_WIDTH {
-                to_remove.insert(to_remove.len(), *id as u16);
+                to_remove.push(*id as u16);
             }
         }
 

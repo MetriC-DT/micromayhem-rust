@@ -25,6 +25,7 @@ impl Client {
     }
 
     /// sends the data stripped from the arena to the server.
+    /// FIXME - sends compressed pertinent information. Probably more than just keypresses.
     pub fn send_data(&self, arena: &Arena) -> Result<()> {
         let pos = arena.get_player().position;
         let [x, y] = pos.to_array();
@@ -36,8 +37,8 @@ impl Client {
         Ok(())
     }
 
+    /// TODO - receives and parses data properly.
     pub fn receive(&self) -> Result<[f32; 2]> {
-        // TODO: run a sizeof over the data sent.
         const NUMBYTES: usize = 8;
         let mut data: [u8; NUMBYTES] = [0; NUMBYTES];
         let bytesread = self.socket.recv(&mut data)?;
