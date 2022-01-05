@@ -49,7 +49,7 @@ impl Packet {
                sequence: u16,
                ack: u16,
                ackbitfield: u32,
-               dataref: &Vec<u8>) -> Result<Self, ErrorKind> {
+               dataref: &[u8]) -> Result<Self, ErrorKind> {
 
         if dataref.len() <= DATA_BYTES {
             let data = dataref.to_vec();
@@ -64,7 +64,7 @@ impl Packet {
     /// this packet's protocol id.
     ///
     /// assumes id > 0. Otherwise, invalid packets may not be verified properly.
-    pub fn get_data<'a>(&'a self, id: ProtocolId) -> Option<&'a Vec<u8>> {
+    pub fn get_data(&self, id: ProtocolId) -> Option<&Vec<u8>> {
         if self.protocol_id != 0 && self.protocol_id == id {
             Some(&self.data)
         } else {
@@ -93,8 +93,9 @@ impl Packet {
     pub fn is_more_recent_than(&self, otherseq: u16) -> bool {
         let tolerance = u16::MAX / 2 + 1;
         let (s1, s2) = (self.sequence, otherseq);
-        return ( (s1 > s2) && (s1 - s2 <= tolerance) ) ||
-            ( (s1 < s2) && (s2 - s1 > tolerance ) );
+
+        ( (s1 > s2) && (s1 - s2 <= tolerance) )
+            || ( (s1 < s2) && (s2 - s1 > tolerance ) )
     }
 }
 
@@ -122,10 +123,11 @@ impl Into<Vec<u8>> for Packet {
     }
 }
 
-impl TryFrom<&Vec<u8>> for Packet {
+
+impl TryFrom<&[u8]> for Packet {
     type Error = TryFromSliceError;
 
-    fn try_from(bytes: &Vec<u8>) -> Result<Packet, Self::Error> {
+    fn try_from(bytes: &[u8]) -> Result<Packet, Self::Error> {
         let mut start = 0;
 
         // parse protocol id.

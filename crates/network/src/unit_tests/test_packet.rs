@@ -32,7 +32,7 @@ fn test_from_into() -> Result<()> {
 
     assert_eq!(bytes.len(), PACKET_BYTES);
 
-    let obtained_packet = Packet::try_from(&bytes).unwrap();
+    let obtained_packet = Packet::try_from(&bytes[..]).unwrap();
 
     assert_eq!(sequence, obtained_packet.get_sequence());
     assert_eq!(ack, obtained_packet.get_ack());

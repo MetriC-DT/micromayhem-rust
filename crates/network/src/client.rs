@@ -1,5 +1,4 @@
-use std::net::{UdpSocket, SocketAddr};
-use std::io::{Result, ErrorKind};
+use std::{net::{UdpSocket, SocketAddr}, io::{self, ErrorKind}};
 
 use crate::packet::{Packet, PACKET_BYTES, ProtocolId};
 
@@ -17,7 +16,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(port: u16, protocol: ProtocolId) -> Result<Self> {
+    pub fn new(port: u16, protocol: ProtocolId) -> Result<Self, io::Error> {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
         let socket = UdpSocket::bind(addr)?;
         let sequence = 0;
@@ -29,7 +28,7 @@ impl Client {
         Ok(Self {socket, sequence, protocol, ack, ack_bitfield, recv_buffer, recent_packet})
     }
 
-    pub fn connect(&self, addr: &str) -> Result<()> {
+    pub fn connect(&self, addr: &str) -> Result<(), io::Error> {
         self.socket.connect(addr)?;
         Ok(())
     }
@@ -41,11 +40,11 @@ impl Client {
 
     /// sends the data contained in a packet to a server.
     /// Also increments the sequence counter for the client, which may result in overflowing.
-    pub fn send_data(&mut self, data: &Vec<u8>) -> Result<()> {
+    pub fn send_data(&mut self, data: &[u8]) -> Result<(), io::Error> {
         let packet = Packet::new(self.protocol, self.sequence, self.ack, self.ack_bitfield, data)?;
         let bytes: Vec<u8> = packet.into();
-        self.socket.send(&bytes)?;
-        self.sequence = self.sequence.overflowing_add(1).0;
+        self.socket.send(&bytes[..])?;
+        self.sequence = self.sequence.wrapping_add(1);
         Ok(())
     }
 
@@ -54,9 +53,9 @@ impl Client {
     ///
     /// Returns an io::Error when socket fails to `recv()` or when the received 
     /// data cannot be constructed into a Packet struct.
-    pub fn receive(&mut self) -> Result<Option<&Vec<u8>>> {
+    pub fn receive(&mut self) -> Result<Option<&Vec<u8>>, io::Error> {
         self.socket.recv(&mut self.recv_buffer)?;
-        self.recent_packet = Packet::try_from(&self.recv_buffer).ok();
+        self.recent_packet = Packet::try_from(&self.recv_buffer[..]).ok();
 
         if let Some(packet) = &self.recent_packet {
             let new_ack = packet.get_sequence();
