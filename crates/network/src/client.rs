@@ -23,7 +23,7 @@ impl Client {
         let sequence = 0;
         let ack = u16::MAX;
         let ack_bitfield = 0;
-        let recv_buffer = Vec::with_capacity(PACKET_BYTES);
+        let recv_buffer = vec![0; PACKET_BYTES];
         let recent_packet = None;
         socket.set_nonblocking(true)?;
         Ok(Self {socket, sequence, protocol, ack, ack_bitfield, recv_buffer, recent_packet})
@@ -63,7 +63,8 @@ impl Client {
         if let Some(packet) = &self.recent_packet {
             let new_ack = packet.get_sequence();
 
-            // if we are more recent, then we set the acks
+            // if the received packet is more recent compared to the previously received
+            // packet, then set the newest ack to the received packet.
             if packet.is_more_recent_than(self.ack) {
                 let seq_diff = Client::get_seq_diff(new_ack, self.ack);
 
