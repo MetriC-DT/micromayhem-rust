@@ -21,7 +21,7 @@ impl Client {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
         let socket = UdpSocket::bind(addr)?;
         let sequence = 0;
-        let ack = u16::MAX;
+        let ack = u16::MAX - 33; // HACK: lets the first recv ack bitfield be zero...
         let ack_bitfield = 0;
         let recv_buffer = vec![0; PACKET_BYTES];
         let recent_packet = None;
@@ -41,12 +41,11 @@ impl Client {
 
     /// sends the data contained in a packet to a server.
     /// Also increments the sequence counter for the client, which may result in overflowing.
-    #[allow(arithmetic_overflow)]
     pub fn send_data(&mut self, data: &Vec<u8>) -> Result<()> {
         let packet = Packet::new(self.protocol, self.sequence, self.ack, self.ack_bitfield, data)?;
         let bytes: Vec<u8> = packet.into();
         self.socket.send(&bytes)?;
-        self.sequence += 1;
+        self.sequence = self.sequence.overflowing_add(1).0;
         Ok(())
     }
 
@@ -55,7 +54,6 @@ impl Client {
     ///
     /// Returns an io::Error when socket fails to `recv()` or when the received 
     /// data cannot be constructed into a Packet struct.
-    #[allow(arithmetic_overflow)]
     pub fn receive(&mut self) -> Result<Option<&Vec<u8>>> {
         self.socket.recv(&mut self.recv_buffer)?;
         self.recent_packet = Packet::try_from(&self.recv_buffer).ok();
@@ -67,25 +65,39 @@ impl Client {
             // packet, then set the newest ack to the received packet.
             if packet.is_more_recent_than(self.ack) {
                 let seq_diff = Client::get_seq_diff(new_ack, self.ack);
+                self.ack = new_ack;
 
                 // subtract 1 because a shift of 0 means 1 ack before.
                 let shift = seq_diff - 1;
 
-                self.ack = new_ack;
-                self.ack_bitfield = (self.ack_bitfield << seq_diff) | (1 << shift);
+                // returns 0 when shifted left by over 32 bits.
+                let new_frame = u32::checked_shl(self.ack_bitfield, seq_diff.into()).unwrap_or(0);
+                let prior_ack = u32::checked_shl(1, shift.into()).unwrap_or(0);
+                self.ack_bitfield = new_frame | prior_ack;
                 Ok(packet.get_data(self.protocol))
             }
             else {
                 // we only need to set the ack_bitfield.
                 // self.ack is more current than the new_ack
                 let seq_diff = Client::get_seq_diff(self.ack, new_ack);
-                self.ack_bitfield |= 1 << (seq_diff - 1);
+
+                // safe version of this code:
+                // `self.ack_bitfield |= 1 << (seq_diff - 1)`
+                self.ack_bitfield |= u32::checked_shl(1, (seq_diff - 1).into()).unwrap_or(0);
                 Ok(None)
             }
         }
         else {
             Err(ErrorKind::InvalidData.into())
         }
+    }
+
+    pub(crate) fn get_bitfield(&self) -> u32 {
+        self.ack_bitfield
+    }
+
+    pub(crate) fn get_sequence(&self) -> u16 {
+        self.sequence
     }
 
     /// Obtains the difference between sequence numbers. For example, if the newer seq number

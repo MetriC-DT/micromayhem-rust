@@ -35,6 +35,7 @@ pub type ProtocolId = u16;
 ///
 /// More information on the algorithm and implementation can be found at:
 /// [Gaffer on Games](https://gafferongames.com/post/reliability_ordering_and_congestion_avoidance_over_udp/)
+#[derive(Debug)]
 pub struct Packet {
     protocol_id: ProtocolId,
     sequence: u16,
