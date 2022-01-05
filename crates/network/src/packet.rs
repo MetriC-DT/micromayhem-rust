@@ -1,4 +1,4 @@
-use std::mem::size_of;
+use std::{mem::size_of, io::ErrorKind, array::TryFromSliceError};
 
 /// Number of bytes for the protocol id.
 pub const PROTOCOL_ID_BYTES: usize = size_of::<ProtocolId>();
@@ -12,8 +12,8 @@ pub const SEQUENCE_BYTES: usize = size_of::<u16>();
 /// number of bytes for the acknowledgement bitfield
 pub const BITFIELD_BYTES: usize = size_of::<u32>();
 
-/// Number of bytes per packet.
-pub const PACKET_BYTES: usize = size_of::<Packet>();
+/// Number of bytes maximum per packet.
+pub const PACKET_BYTES: usize = PROTOCOL_ID_BYTES + SEQUENCE_BYTES * 2 + BITFIELD_BYTES + DATA_BYTES;
 
 /// Type alias for protocol id, a 16 bit header tag on every packet.
 pub type ProtocolId = u16;
@@ -40,7 +40,7 @@ pub struct Packet {
     sequence: u16,
     ack: u16,
     ackbitfield: u32,
-    data: [u8; DATA_BYTES],
+    data: Vec<u8>,
 }
 
 impl Packet {
@@ -48,9 +48,14 @@ impl Packet {
                sequence: u16,
                ack: u16,
                ackbitfield: u32,
-               data: [u8; DATA_BYTES]) -> Self {
+               dataref: &Vec<u8>) -> Result<Self, ErrorKind> {
 
-        Self { protocol_id, sequence, ack, ackbitfield, data }
+        if dataref.len() <= DATA_BYTES {
+            let data = dataref.to_vec();
+            Ok(Self { protocol_id, sequence, ack, ackbitfield, data})
+        } else {
+            Err(ErrorKind::InvalidData)
+        }
     }
 
     /// verifies, then gets the data, provided the given id matches with the packet's protocol id.
@@ -58,8 +63,8 @@ impl Packet {
     /// this packet's protocol id.
     ///
     /// assumes id > 0. Otherwise, invalid packets may not be verified properly.
-    pub fn get_data(&self, id: ProtocolId) -> Option<&[u8; DATA_BYTES]> {
-        if id > 0 && id == self.protocol_id {
+    pub fn get_data<'a>(&'a self, id: ProtocolId) -> Option<&'a Vec<u8>> {
+        if self.protocol_id != 0 && self.protocol_id == id {
             Some(&self.data)
         } else {
             None
@@ -84,13 +89,7 @@ impl Packet {
 
     /// returns true if this packet is more recent than another packet (comparison of 
     /// sequence numbers). The sequence number should allow for overflow wrap around.
-    pub fn is_more_recent_than(&self, other: &Packet) -> bool {
-        self.compare_recency(other.sequence)
-    }
-
-    /// returns true if this packet is more recent than another packet (comparison of 
-    /// sequence numbers). The sequence number should allow for overflow wrap around.
-    pub fn compare_recency(&self, otherseq: u16) -> bool {
+    pub fn is_more_recent_than(&self, otherseq: u16) -> bool {
         let tolerance = u16::MAX / 2 + 1;
         let (s1, s2) = (self.sequence, otherseq);
         return ( (s1 > s2) && (s1 - s2 <= tolerance) ) ||
@@ -122,50 +121,35 @@ impl Into<Vec<u8>> for Packet {
     }
 }
 
-impl From<Vec<u8>> for Packet {
-    fn from(bytes: Vec<u8>) -> Self {
+impl TryFrom<&Vec<u8>> for Packet {
+    type Error = TryFromSliceError;
+
+    fn try_from(bytes: &Vec<u8>) -> Result<Packet, Self::Error> {
         let mut start = 0;
 
         // parse protocol id.
-        let protocol_id_bytes = &bytes[start..start+PROTOCOL_ID_BYTES].try_into();
+        let protocol_id_bytes = &bytes[start..start+PROTOCOL_ID_BYTES].try_into()?;
+        let protocol_id: ProtocolId = ProtocolId::from_be_bytes(*protocol_id_bytes);
         start += PROTOCOL_ID_BYTES;
 
-        // README: if unable to obtain protocol_id, thne fill it in with pure zeroes.
-        // Therefore, when verifying the validity of the packet, we can just throw 
-        // bad packets out because it will not match our protocol id
-        // (which should not be all zeroes)
-        let protocol_id: ProtocolId = ProtocolId::from_be_bytes(
-            protocol_id_bytes.unwrap_or_else(|_| [0; PROTOCOL_ID_BYTES]));
-
         // parse sequence bytes.
-        let sequence_bytes = &bytes[start..start+SEQUENCE_BYTES].try_into();
+        let sequence_bytes = &bytes[start..start+SEQUENCE_BYTES].try_into()?;
+        let sequence = u16::from_be_bytes(*sequence_bytes);
         start += SEQUENCE_BYTES;
-
-        // README: 0 same with sequence bytes.
-        let sequence = u16::from_be_bytes(
-            sequence_bytes.unwrap_or_else(|_| [0; SEQUENCE_BYTES]));
 
         // parse ack bytes.
-        let ack_bytes = &bytes[start..start+SEQUENCE_BYTES].try_into();
+        let ack_bytes = &bytes[start..start+SEQUENCE_BYTES].try_into()?;
+        let ack = u16::from_be_bytes(*ack_bytes);
         start += SEQUENCE_BYTES;
 
-        // README: 0 same with ack bytes.
-        let ack = u16::from_be_bytes(
-            ack_bytes.unwrap_or_else(|_| [0; SEQUENCE_BYTES]));
-
         // parse ack bitfield.
-        let ackbits_bytes = &bytes[start..start+BITFIELD_BYTES].try_into();
+        let ackbits_bytes = &bytes[start..start+BITFIELD_BYTES].try_into()?;
+        let ackbitfield = u32::from_be_bytes(*ackbits_bytes);
         start += BITFIELD_BYTES;
 
-        let ackbitfield = u32::from_be_bytes(
-            ackbits_bytes.unwrap_or_else(|_| [0; BITFIELD_BYTES]));
+        // data becomes the remaining bits.
+        let data: Vec<u8> = bytes[start..].to_vec();
 
-
-        // README: if unable to generate data, then fill in data with pure zeroes.
-        let data_bytes = &bytes[start..start+DATA_BYTES].try_into();
-        let data: [u8; DATA_BYTES] = data_bytes.unwrap_or_else(|_| [0; DATA_BYTES]);
-
-
-        Self {protocol_id, sequence, ack, ackbitfield, data}
+        Ok(Self {protocol_id, sequence, ack, ackbitfield, data})
     }
 }
