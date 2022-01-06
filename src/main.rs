@@ -19,7 +19,7 @@ fn main() -> GameResult {
 
     // loads atlas
     let atlaspath = Path::new(SPRITE_JSON);
-    let atlas = Atlas::parse_atlas_json(&resource_dir.join(&atlaspath));
+    let atlas = Atlas::new(&resource_dir.join(&atlaspath));
 
     let mut cb = ContextBuilder::new(GAME_TITLE, AUTHOR);
     cb = configuration::load_configuration(cb);

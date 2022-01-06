@@ -32,12 +32,12 @@ pub struct SpriteData {
 #[derive(Debug, Deserialize)]
 pub struct Atlas {
     frames: Vec<SpriteData>,
-    meta: Meta,
+    _meta: Meta,
 }
 
 
 impl Atlas {
-    pub fn parse_atlas_json(texture_atlas_file: &Path) -> Self {
+    pub fn new(texture_atlas_file: &Path) -> Self {
         use std::fs::File;
         use std::io::BufReader;
 
@@ -49,25 +49,18 @@ impl Atlas {
 
     /// Returns a sprite from the Atlas.
     pub fn create_sprite(&self, sprite_name: &str) -> Sprite {
-        let width = self.meta.size.w as f32;
-        let height = self.meta.size.h as f32;
-        let atlas_rect = graphics::Rect::new(0.0, 0.0, width, height);
-
         if let Some(sprite_data) = self.frames.iter().find(|d| d.filename == sprite_name) {
             Sprite::new(
-                graphics::Rect::fraction(
-                    sprite_data.frame.x as f32,
-                    sprite_data.frame.y as f32,
-                    sprite_data.frame.w as f32,
-                    sprite_data.frame.h as f32,
-                    &atlas_rect,
-                ),
+                graphics::Rect {
+                    x: sprite_data.frame.x as f32,
+                    y: sprite_data.frame.y as f32,
+                    w: sprite_data.frame.w as f32,
+                    h: sprite_data.frame.h as f32,
+                },
                 Vec2::ONE,
-                sprite_data.frame.w as f32,
-                sprite_data.frame.h as f32,
             )
         } else {
-            unimplemented!("Not handling failure to find sprite");
+            panic!("Cannot find sprite {}", sprite_name);
         }
     }
 }
@@ -77,13 +70,11 @@ pub struct Sprite {
     /// The square that we want to cut out of the texture atlas.
     pub rect: graphics::Rect,
     pub scale: Vec2,
-    pub width: f32,
-    pub height: f32,
 }
 
 impl Sprite {
-    pub fn new(rect: graphics::Rect, scale: Vec2, width: f32, height: f32) -> Self {
-        Self { rect, scale, width, height }
+    pub fn new(rect: graphics::Rect, scale: Vec2) -> Self {
+        Self { rect, scale }
     }
 
     /// Adds a draw command to the sprite batch.
@@ -100,7 +91,7 @@ impl Sprite {
 
     /// Returns the bounding box for this sprite.
     pub fn get_bound_box(&self) -> graphics::Rect {
-        let mut r = graphics::Rect::new(0.0, 0.0, self.width, self.height);
+        let mut r = graphics::Rect::new(0.0, 0.0, self.rect.w, self.rect.h);
         r.scale(self.scale.x, self.scale.y);
         r
     }
