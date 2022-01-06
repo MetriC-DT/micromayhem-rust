@@ -37,9 +37,7 @@ pub struct Arena {
 
 impl Default for Arena {
     fn default() -> Self {
-        let mut default_arena = Arena::new(Map::default(), Player::default());
-        default_arena.add_player(Player::default());
-        default_arena
+        Arena::new(Map::default(), Player::default())
     }
 }
 
@@ -249,8 +247,9 @@ impl Arena {
             run = Vec2::ZERO;
         }
 
-        // Updates all of the bullets' positions. If bullets fly off the map, then remove it
-        // from the collection.
+        // Updates all of the bullets' positions. If bullets fly off the map, ends its lifetime,
+        // or hits the player, then remove it from the collection. Reports it over the network.
+        //
         // TODO: Initialize WITH_CAPACITY = number of players
         let mut to_remove: Vec<u16> = Vec::with_capacity(1);
         for (id, bullet) in self.bullets_iterator_mut() {
@@ -292,7 +291,7 @@ impl Arena {
         let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
         self.player.update(dt, lowest_block_y, total_force, drop_input, direction);
 
-        // TODO: From network, obtains the location of all the other players.
+        // From network, obtains the location of all the other players.
         self.update_other_players(dt);
     }
 

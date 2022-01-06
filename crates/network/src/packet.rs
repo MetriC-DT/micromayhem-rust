@@ -1,4 +1,4 @@
-use std::{mem::size_of, io::ErrorKind, array::TryFromSliceError};
+use std::{mem::size_of, io::{ErrorKind, self}, array::TryFromSliceError};
 
 /// Number of bytes for the protocol id.
 pub const PROTOCOL_ID_BYTES: usize = size_of::<ProtocolId>();
@@ -35,6 +35,9 @@ pub type ProtocolId = u16;
 ///
 /// More information on the algorithm and implementation can be found at:
 /// [Gaffer on Games](https://gafferongames.com/post/reliability_ordering_and_congestion_avoidance_over_udp/)
+///
+/// TODO: implement some form of redundancy check (e.g. CRC32) to prevent data corruption.
+/// [Explanation](https://gafferongames.com/post/serialization_strategies/)
 #[derive(Debug)]
 pub struct Packet {
     protocol_id: ProtocolId,
@@ -49,13 +52,13 @@ impl Packet {
                sequence: u16,
                ack: u16,
                ackbitfield: u32,
-               dataref: &[u8]) -> Result<Self, ErrorKind> {
+               dataref: &[u8]) -> Result<Self, io::Error> {
 
         if dataref.len() <= DATA_BYTES {
             let data = dataref.to_vec();
             Ok(Self { protocol_id, sequence, ack, ackbitfield, data})
         } else {
-            Err(ErrorKind::InvalidData)
+            Err(ErrorKind::InvalidData.into())
         }
     }
 
@@ -103,18 +106,18 @@ impl Into<Vec<u8>> for Packet {
     fn into(self) -> Vec<u8> {
         // protocol
         let mut packet_bytes: Vec<u8> = self.protocol_id
-            .to_be_bytes()
+            .to_le_bytes()
             .into_iter()
             .collect();
 
         // sequence
-        packet_bytes.extend_from_slice(&self.sequence.to_be_bytes());
+        packet_bytes.extend_from_slice(&self.sequence.to_le_bytes());
 
         // ack
-        packet_bytes.extend_from_slice(&self.ack.to_be_bytes());
+        packet_bytes.extend_from_slice(&self.ack.to_le_bytes());
 
         // ack bitfield
-        packet_bytes.extend_from_slice(&self.ackbitfield.to_be_bytes());
+        packet_bytes.extend_from_slice(&self.ackbitfield.to_le_bytes());
 
         // data
         packet_bytes.extend_from_slice(&self.data);
@@ -132,25 +135,27 @@ impl TryFrom<&[u8]> for Packet {
 
         // parse protocol id.
         let protocol_id_bytes = &bytes[start..start+PROTOCOL_ID_BYTES].try_into()?;
-        let protocol_id: ProtocolId = ProtocolId::from_be_bytes(*protocol_id_bytes);
+        let protocol_id: ProtocolId = ProtocolId::from_le_bytes(*protocol_id_bytes);
         start += PROTOCOL_ID_BYTES;
 
         // parse sequence bytes.
         let sequence_bytes = &bytes[start..start+SEQUENCE_BYTES].try_into()?;
-        let sequence = u16::from_be_bytes(*sequence_bytes);
+        let sequence = u16::from_le_bytes(*sequence_bytes);
         start += SEQUENCE_BYTES;
 
         // parse ack bytes.
         let ack_bytes = &bytes[start..start+SEQUENCE_BYTES].try_into()?;
-        let ack = u16::from_be_bytes(*ack_bytes);
+        let ack = u16::from_le_bytes(*ack_bytes);
         start += SEQUENCE_BYTES;
 
         // parse ack bitfield.
         let ackbits_bytes = &bytes[start..start+BITFIELD_BYTES].try_into()?;
-        let ackbitfield = u32::from_be_bytes(*ackbits_bytes);
+        let ackbitfield = u32::from_le_bytes(*ackbits_bytes);
         start += BITFIELD_BYTES;
 
         // data becomes the remaining bits.
+        // TODO: we might want to check the length of data in case of 
+        // adversarial data packets that get inputted.
         let data: Vec<u8> = bytes[start..].to_vec();
 
         Ok(Self {protocol_id, sequence, ack, ackbitfield, data})
