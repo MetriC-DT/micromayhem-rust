@@ -7,7 +7,7 @@ pub enum Input {
     Down,
     Shoot,
     Bomb,
-    Throw
+    Throw,
 }
 
 #[derive(Debug)]

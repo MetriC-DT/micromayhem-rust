@@ -144,10 +144,6 @@ impl Map {
         Ok(Map { mapblocks })
     }
 
-    pub(crate) fn from_mapblocks(mapblocks: MapBlocks) -> Result<Map, String> {
-        Map::new(mapblocks)
-    }
-
     /// Constructs a new map from data saved in a file.
     pub(crate) fn read_from_file(filename: &str) -> Result<Map, String> {
         match File::open(filename) {

@@ -11,7 +11,7 @@ mod tests {
         let mut data: [i128; BlockType::COUNT] = [0; BlockType::COUNT];
         data[0] = a;
         data[1] = b;
-        let result = Map::from_mapblocks(data.into());
+        let result = Map::new(data.into());
 
         assert!(result.is_ok());
     }
@@ -25,20 +25,20 @@ mod tests {
         data[0] = a;
         data[1] = b;
 
-        let result = Map::from_mapblocks(data.into());
+        let result = Map::new(data.into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn allow_basic_map_3_init() {
         let data: [i128; BlockType::COUNT] = [0; BlockType::COUNT];
-        let result = Map::from_mapblocks(data.into());
+        let result = Map::new(data.into());
         assert!(result.is_ok());
 
         let mut data2: [i128; BlockType::COUNT] = [0; BlockType::COUNT];
         data2[0] = 1;
 
-        let result2 = Map::from_mapblocks(data2.into());
+        let result2 = Map::new(data2.into());
         assert!(result2.is_ok());
     }
 
@@ -50,7 +50,7 @@ mod tests {
         let mut data: [i128; BlockType::COUNT] = [0; BlockType::COUNT];
         data[0] = a;
         data[1] = b;
-        let result = Map::from_mapblocks(data.into());
+        let result = Map::new(data.into());
 
         assert!(result.is_err());
     }
@@ -59,7 +59,7 @@ mod tests {
     fn disallow_full_overlap_map_init() {
         let m = -1;
         let data: [i128; BlockType::COUNT] = [m; BlockType::COUNT];
-        let result = Map::from_mapblocks(data.into());
+        let result = Map::new(data.into());
         assert!(result.is_err());
     }
 
@@ -69,7 +69,7 @@ mod tests {
         let path = Path::new(f);
         let mut data: [i128; BlockType::COUNT] = [0; BlockType::COUNT];
         data[0] = -1;
-        let result = Map::from_mapblocks(data.into()).unwrap();
+        let result = Map::new(data.into()).unwrap();
 
         let writesuccess = result.write_to_file(f);
 
@@ -95,7 +95,7 @@ mod tests {
     fn test_display_map() {
         let data: MapBlocksList = [0; BlockType::COUNT];
         let matchstr = "0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n";
-        let m = Map::from_mapblocks(data.into()).unwrap();
+        let m = Map::new(data.into()).unwrap();
 
         assert_eq!(m.get_all_occupied().to_string(), matchstr);
     }
@@ -105,7 +105,7 @@ mod tests {
         let mut data: MapBlocksList = [0; BlockType::COUNT];
         data[0] = -1;
         let matchstr = "1111111111111111\n1111111111111111\n1111111111111111\n1111111111111111\n1111111111111111\n1111111111111111\n1111111111111111\n1111111111111111\n";
-        let m = Map::from_mapblocks(data.into()).unwrap();
+        let m = Map::new(data.into()).unwrap();
         assert_eq!(m.get_all_occupied().to_string(), matchstr);
     }
 
@@ -116,7 +116,7 @@ mod tests {
         let mut data: [i128; BlockType::COUNT] = [0; BlockType::COUNT];
         data[BlockType::GrassBlock as usize] = grassbits;
         data[BlockType::IceBlock as usize] = icebits;
-        let map = Map::from_mapblocks(data.into()).unwrap();
+        let map = Map::new(data.into()).unwrap();
 
         let (row, col) = (5, 0);
         let blocktype = map.to_blocktypes()[col * VERTICAL_BLOCKS + row].unwrap();
@@ -130,7 +130,7 @@ mod tests {
         let mut data: [i128; BlockType::COUNT] = [0; BlockType::COUNT];
         data[BlockType::GrassBlock as usize] = grassbits;
         data[BlockType::IceBlock as usize] = icebits;
-        let map = Map::from_mapblocks(data.into()).unwrap();
+        let map = Map::new(data.into()).unwrap();
 
         assert_eq!(map.first_row_below(1, 0), Some(5));
         assert_eq!(map.first_row_below(0, 0), Some(0));

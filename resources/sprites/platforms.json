@@ -9,7 +9,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "gras2.png",
+	"filename": "GrassBlock.png",
 	"frame": {"x":128,"y":0,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,
@@ -177,7 +177,7 @@
 	"sourceSize": {"w":128,"h":128}
 },
 {
-	"filename": "ground2.png",
+	"filename": "IceBlock.png",
 	"frame": {"x":256,"y":640,"w":128,"h":128},
 	"rotated": false,
 	"trimmed": false,

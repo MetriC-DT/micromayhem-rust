@@ -1,17 +1,15 @@
 use game::player::Player;
-use game::{ARENA_WIDTH, ARENA_HEIGHT};
 use game::arena::Arena;
-use game::block::BlockRect;
 use game::input::{InputMask, Input};
 use ggez::Context;
 use ggez::event::KeyCode;
+use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::{event::EventHandler, GameResult, timer, graphics};
-use ggez::graphics::{Color, Mesh, DrawMode, MeshBuilder, DrawParam, Rect};
+use ggez::graphics::{Color, Mesh, DrawMode, DrawParam};
 use glam::Vec2;
+use gui::spriteloader::Atlas;
 use crate::BACKGROUND_COLOR;
 use crate::viewport::Viewport;
-use gui::spriteloader::Atlas;
-
 
 // the ticks per second for the physics simulation.
 const DESIRED_FPS: u32 = 60;
@@ -20,43 +18,51 @@ const DT: f32 = 1.0 / DESIRED_FPS as f32;
 #[derive(Debug)]
 pub struct GameState {
     arena: Arena,
-    mapmesh: Mesh,
-    atlas: Atlas,
+    mapmesh: SpriteBatch,
     inputmask: InputMask,
 }
 
 
-/// builds a mapmesh from a given arena.
-///
-/// TODO: Do not want it to crash when an empty map is inputted.
-fn build_mapmesh(arena: &Arena, ctx: &mut Context) -> GameResult<Mesh> {
-    let mb = &mut MeshBuilder::new();
-    let colors = [Color::BLACK, Color::BLUE];
-
-    for blockitem in arena.get_blocks_iter() {
-        let block: BlockRect = blockitem;
-        let r = Rect{x: block.x as f32, y: block.y as f32, w: block.w as f32, h: block.h as f32};
-        mb.rectangle(DrawMode::stroke(1.0), r, colors[block.blocktype as usize]).unwrap();
-    }
-
-    let bounds = Rect{x: 0.0, y: 0.0, w: ARENA_WIDTH as f32, h: ARENA_HEIGHT as f32};
-    mb.rectangle(DrawMode::stroke(1.0), bounds, Color::BLACK).unwrap();
-    mb.build(ctx)
-}
 
 impl GameState {
-    pub fn new(arena: Arena, ctx: &mut Context, atlas: Atlas) -> GameState {
-        let mapmesh = build_mapmesh(&arena, ctx).unwrap();
+    pub fn new(arena: Arena, ctx: &mut Context, atlas: &Atlas) -> GameState {
+        let mapmesh = GameState::build_mapmesh(&arena, ctx, atlas).unwrap();
         let inputmask = InputMask::new();
-        GameState {arena, mapmesh, atlas, inputmask}
+        GameState {arena, mapmesh, inputmask}
     }
 
+    /// TODO: Use player sprite rather than just a rectangle.
     pub fn draw_player(ctx: &mut ggez::Context, player: &Player, offset: Vec2, color: Color) -> GameResult {
         let [x, y] = player.position.to_array();
         let playerrect = ggez::graphics::Rect {x, y, w: player.width, h: player.height};
         let meshrect = Mesh::new_rectangle(ctx, DrawMode::fill(), playerrect, color)?;
         graphics::draw(ctx, &meshrect, DrawParam::default().dest(offset))?;
         Ok(())
+    }
+
+    /// builds a mapmesh from a given arena.
+    ///
+    /// TODO: Do not want it to crash when an empty map is inputted.
+    /// TODO: Use sprite batch to display map with different terrains.
+    fn build_mapmesh(arena: &Arena, ctx: &mut Context, atlas: &Atlas) -> GameResult<SpriteBatch> {
+        let spritesheet_image = graphics::Image::new(ctx, "/sprites/platforms.png")?;
+        let mut spritebatch = graphics::spritebatch::SpriteBatch::new(spritesheet_image);
+
+        // Nearest or Linear
+        // spritebatch.set_filter(graphics::FilterMode::Nearest);
+
+        for block in arena.get_blocks_iter() {
+            let spritename = block.blocktype.to_string() + ".png";
+            let (x, y, w, h) = (block.x, block.y, block.w, block.h);
+            let dest = Vec2::new(x, y);
+            let size = Vec2::new(w, h);
+
+            // cut out image from the spritesheet and resize.
+            let sprite_rect = atlas.create_sprite(&spritename, size).draw_to(dest);
+            spritebatch.add(sprite_rect);
+        }
+
+        Ok(spritebatch)
     }
 }
 
@@ -112,6 +118,8 @@ impl EventHandler for GameState {
             KeyCode::S => self.inputmask.add_mask(Input::Down),
             KeyCode::D => self.inputmask.add_mask(Input::Right),
             KeyCode::O => self.inputmask.add_mask(Input::Shoot),
+            KeyCode::P => self.inputmask.add_mask(Input::Bomb),
+            KeyCode::I => self.inputmask.add_mask(Input::Throw),
             _ => ()
         }
     }
@@ -123,6 +131,8 @@ impl EventHandler for GameState {
             KeyCode::S => self.inputmask.remove_mask(Input::Down),
             KeyCode::D => self.inputmask.remove_mask(Input::Right),
             KeyCode::O => self.inputmask.remove_mask(Input::Shoot),
+            KeyCode::P => self.inputmask.remove_mask(Input::Bomb),
+            KeyCode::I => self.inputmask.remove_mask(Input::Throw),
             _ => ()
         }
     }

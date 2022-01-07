@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use strum::EnumCount;
 use strum_macros::{EnumCount, EnumIter};
 use BlockType::*;
@@ -8,6 +10,12 @@ use BlockType::*;
 pub enum BlockType {
     GrassBlock,
     IceBlock,
+}
+
+impl Display for BlockType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 /// coefficient of frictions for various blocks if you want to access the friction
