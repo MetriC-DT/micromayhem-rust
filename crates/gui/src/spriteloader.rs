@@ -58,9 +58,11 @@ impl Atlas {
             let w = sprite_data.frame.w as f32;
             let h = sprite_data.frame.h as f32;
 
+            let origsize = Vec2::new(w, h);
+
             Sprite::new(
                 graphics::Rect::fraction(x, y, w, h, &atlas_rect),
-                Vec2::ONE,
+                size / origsize
             )
         } else {
             panic!("Cannot find sprite {}", sprite_name);

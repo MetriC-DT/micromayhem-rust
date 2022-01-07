@@ -41,15 +41,12 @@ impl GameState {
     }
 
     /// builds a mapmesh from a given arena.
-    ///
-    /// TODO: Do not want it to crash when an empty map is inputted.
-    /// TODO: Use sprite batch to display map with different terrains.
     fn build_mapmesh(arena: &Arena, ctx: &mut Context, atlas: &Atlas) -> GameResult<SpriteBatch> {
         let spritesheet_image = graphics::Image::new(ctx, "/sprites/platforms.png")?;
         let mut spritebatch = graphics::spritebatch::SpriteBatch::new(spritesheet_image);
 
         // Nearest or Linear
-        // spritebatch.set_filter(graphics::FilterMode::Nearest);
+        spritebatch.set_filter(graphics::FilterMode::Nearest);
 
         for block in arena.get_blocks_iter() {
             let spritename = block.blocktype.to_string() + ".png";
