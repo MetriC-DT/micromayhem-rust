@@ -88,7 +88,7 @@ impl EventHandler for GameState {
         // draws everything else.
         graphics::draw(ctx, &self.mapmesh, DrawParam::default().dest(offset))?;
 
-        GameState::draw_player(ctx, player, offset, Color::BLUE)?;
+        GameState::draw_player(ctx, player, offset, Color::WHITE)?;
 
         for p in self.arena.get_other_players_iter() {
             GameState::draw_player(ctx, p, offset, Color::GREEN)?;
