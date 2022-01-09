@@ -30,29 +30,26 @@ pub struct Arena {
     map: Map,
     bullets: HashMap<u16, Bullet>,
     blocks: [Option<BlockType>; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS],
-    player: Player,
     bulletcount: u16,
-    other_players: Vec<Player>
+    players: Vec<Player>
 }
 
 impl Default for Arena {
     fn default() -> Self {
-        Arena::new(Map::default(), Player::default())
+        let mut new_arena = Arena::new(Map::default());
+        new_arena.add_player(Player::default());
+
+        new_arena
     }
 }
 
 impl Arena {
-    pub fn new(map: Map, player: Player) -> Self {
+    pub fn new(map: Map) -> Self {
         let blocks = map.to_blocktypes();
         let bullets = HashMap::new();
         let bulletcount = 0;
-        let other_players = Vec::with_capacity(3);
-        Self { map, player, blocks, bullets, bulletcount, other_players }
-    }
-
-    /// obtains the block type at the specified row and column, or None if it doesn't exist.
-    pub fn get_blocktype_at(&self, row: usize, col: usize) -> Option<BlockType> {
-        self.blocks[col * VERTICAL_BLOCKS + row]
+        let players = Vec::new();
+        Self { map, blocks, bullets, bulletcount, players }
     }
 
     /// returns the top corner x and y coordinates of a block at row and col.
@@ -64,30 +61,21 @@ impl Arena {
 
     /// adds a new player to the arena.
     pub fn add_player(&mut self, player: Player) {
-        self.other_players.push(player);
+        self.players.push(player);
     }
 
     /// gets an iterator over all of the other players.
-    pub fn get_other_players_iter(&self) -> impl Iterator<Item=&Player> + '_ {
-        self.other_players.iter()
-    }
-
-    /// updates the other players of the arena.
-    ///
-    /// TODO: probably grab data from network here. We might only need the player's position
-    fn update_other_players(&mut self, dt: f32) {
-        for p in self.other_players.iter_mut() {
-            p.update(dt, ARENA_HEIGHT, Vec2::Y * 1000.0, false, 1.0);
-        }
+    pub fn get_players_iter(&self) -> impl Iterator<Item=&Player> + '_ {
+        self.players.iter()
     }
 
     /// obtains the position of the row as f32.
-    pub fn get_block_row_position(row: usize) -> f32 {
+    fn get_block_row_position(row: usize) -> f32 {
         VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * row as f32
     }
 
     /// obtains the position of the col as f32.
-    pub fn get_block_col_position(col: usize) -> f32 {
+    fn get_block_col_position(col: usize) -> f32 {
         HORIZONTAL_PADDING + BLOCK_WIDTH * col as f32
     }
 
@@ -149,109 +137,18 @@ impl Arena {
         }
     }
 
-    /// Simulates the arena when delta time `dt` has passed.
+    /// Simulates the arena when delta time `dt` has passed and all the player's inputs are
+    /// accounted for.
     pub fn update(&mut self, dt: f32, input: &InputMask) {
-        // total mass obtains mass of player + weapon.
-        let total_mass = self.player.get_total_mass();
-        let player_bottom = self.player.position + Vec2::new(0.0, self.player.height);
-        let left_grid_position = Arena::to_row_col(player_bottom);
-        let right_grid_position = Arena::to_row_col(player_bottom + Vec2::new(self.player.width, 0.0));
+        self.update_players(dt, input);
+        self.update_bullets(dt);
+    }
 
-        // TODO: calculates the acceleration experienced by the player, with all variables and
-        // inputs accounted for.
-        //
-        // Considers forces from:
-        // weight + gun recoil + block friction + block normal + bullet hit + WASD inputs.
-        let weight = GRAVITY_DEFAULT * total_mass;
-        let mut lowest_block_y: f32 = ARENA_HEIGHT + self.player.height;
-        let mut block_friction = Vec2::ZERO;
-        let mut run_friction = Vec2::new(AIR_FRICTION, 0.0);
-        let mut block_normal = Vec2::ZERO;
-        let mut gun_recoil = Vec2::ZERO;
-        let mut bullet_hit = Vec2::ZERO;
-        let mut jump = Vec2::ZERO;
-        let mut run: Vec2;
-        let mut drop_input: bool = false;
-        let mut standing_on_block = false;
-        let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
-        let has_right = input.has_mask(Input::Right) as u8 as f32;
-        let direction = has_left + has_right;
-        let has_jump = input.has_mask(Input::Up);
-
-        let first_rowcol_below_opt = self.find_first_rowcol_below(&left_grid_position, &right_grid_position);
-
-        if let Some((row, col)) = first_rowcol_below_opt {
-            // we are standing on block if y position is lowest and player is falling.
-            lowest_block_y = Arena::get_block_row_position(row);
-            standing_on_block = player_bottom.y == lowest_block_y && self.player.velocity.y <= 0.0;
-
-            if standing_on_block {
-                // sets player's velocity y component to zero.
-                self.player.velocity.y = 0.0;
-
-                // obtains the normal force
-                block_normal = -weight;
-
-                // obtains the frictional force, and point its direction to opposite velocity.
-                let xvel = self.player.velocity.x;
-                let fric_direction: f32 = -normalize_float(xvel);
-
-                // if player's velocity is normalized to be 0, then we can directly set it to
-                // prevent floating point rounding errors.
-                self.player.velocity.x *= fric_direction.abs();
-
-                // we are already on a block, so the blocktype should not be None
-                let blocktype = self.get_blocktype_at(row, col).expect("BlockType should not be None");
-
-                let coeff_friction = block::get_block_friction(blocktype);
-                let block_normal_magnitude = block_normal.y.abs();
-
-                // minimizes so we do not overshoot (compares the force to reduce the player's
-                // speed down to zero against the frictional force, and chooses the minimum)
-                let max_allowed_friction_magnitude = xvel.abs() * total_mass / dt;
-                let block_friction_magnitude = f32::min(coeff_friction * block_normal_magnitude, max_allowed_friction_magnitude);
-                block_friction = fric_direction * block_friction_magnitude * Vec2::X;
-
-                // we update run_friction: the force to get the player moving.
-                // This is only relevant to when player inputs their left/right movement commands.
-                run_friction = coeff_friction * block_normal_magnitude * Vec2::X;
-
-                // can only drop down if we are standing on block, and not on the lowest platform.
-                drop_input = input.has_mask(Input::Down) && row != VERTICAL_BLOCKS - 1;
-            }
-        }
-
-        // removes one jump if not touching ground. Else resets the player's jump count.
-        if !standing_on_block {
-            self.player.jumps_left = u8::min(self.player.jumps_count - 1, self.player.jumps_left);
-        } else {
-            self.player.jumps_left = self.player.jumps_count;
-        }
-
-        // accelerations from player inputs
-        // player's jump inputs
-        if has_jump {
-            jump = self.player.jump_force_and_decrement();
-        }
-
-        // Disallows any acceleration input that is in the same direction as the player's
-        // velocity if the player's velocity is already above its speed_cap.
-        //
-        // README: A better solution might employ correcting the run force by calculating its difference
-        // against the maximum allowed acceleration to reach the speed cap rather than just zeroing
-        // out the run input. This would probably result in a more "consistent" usage of the
-        // speed_cap.
-        let multiplier = 2.0;
-        run = multiplier * run_friction * direction;
-        if (run.x * self.player.velocity.x > 0.0) && (self.player.velocity.x.abs() >= self.player.speed_cap) {
-            run = Vec2::ZERO;
-        }
-
+    /// handles bullets flying off the map or colliding with players.
+    fn update_bullets(&mut self, dt: f32) {
         // Updates all of the bullets' positions. If bullets fly off the map, ends its lifetime,
         // or hits the player, then remove it from the collection. Reports it over the network.
-        //
-        // TODO: Initialize WITH_CAPACITY = number of players
-        let mut to_remove: Vec<u16> = Vec::with_capacity(1);
+        let mut to_remove: Vec<u16> = Vec::with_capacity(self.players.len());
         for (id, bullet) in self.bullets_iterator_mut() {
             bullet.update(dt);
 
@@ -265,35 +162,135 @@ impl Arena {
         for id in to_remove {
             self.bullets.remove(&id);
         }
-
-        // gets player shooting bullet recoil.
-        // Since the recoil should punish a player less than a knockback, the force exerted by
-        // recoil will be a fraction of the impulse over time rather than the entire dp/dt.
-        if input.has_mask(Input::Shoot) {
-            let attack_status =  self.player.attack();
-
-            if attack_status == WeaponStatus::FireSuccess {
-                gun_recoil = -self.player.get_bullet_momentum() / dt;
-
-                // create a bullet at the player's position, velocity and direction.
-                let bullet = self.player.create_new_bullet(self.bulletcount);
-                self.bullets.insert(bullet.get_id(), bullet);
-                self.bulletcount += 1;
-            }
-
-            else if attack_status == WeaponStatus::Empty {
-                // TODO: sets the recoil correctly when player throws the weapon.
-                gun_recoil = Vec2::ZERO;
-            }
-        }
-
-        // updates the player after calculating all the applied forces above.
-        let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
-        self.player.update(dt, lowest_block_y, total_force, drop_input, direction);
-
-        // From network, obtains the location of all the other players.
-        self.update_other_players(dt);
     }
+
+    /// updates the players in the arena based on their respective inputs.
+    fn update_players(&mut self, dt: f32, input: &InputMask) {
+        for player in self.players.iter_mut() {
+            // total mass obtains mass of player + weapon.
+            let total_mass = player.get_total_mass();
+            let player_bottom = player.position + Vec2::new(0.0, player.height);
+            let left_grid_position = Arena::to_row_col(player_bottom);
+            let right_grid_position = Arena::to_row_col(player_bottom + Vec2::new(player.width, 0.0));
+
+            // TODO: calculates the acceleration experienced by the player, with all variables and
+            // inputs accounted for.
+            //
+            // Considers forces from:
+            // weight + gun recoil + block friction + block normal + bullet hit + WASD inputs.
+            let weight = GRAVITY_DEFAULT * total_mass;
+            let mut lowest_block_y: f32 = ARENA_HEIGHT + player.height;
+            let mut block_friction = Vec2::ZERO;
+            let mut run_friction = Vec2::new(AIR_FRICTION, 0.0);
+            let mut block_normal = Vec2::ZERO;
+            let mut gun_recoil = Vec2::ZERO;
+            let mut bullet_hit = Vec2::ZERO;
+            let mut jump = Vec2::ZERO;
+            let mut run: Vec2;
+            let mut drop_input: bool = false;
+            let mut standing_on_block = false;
+            let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
+            let has_right = input.has_mask(Input::Right) as u8 as f32;
+            let direction = has_left + has_right;
+            let has_jump = input.has_mask(Input::Up);
+
+            let first_rowcol_below_opt = Arena::find_first_rowcol_below(&self.map, &left_grid_position, &right_grid_position);
+
+            if let Some((row, col)) = first_rowcol_below_opt {
+                // we are standing on block if y position is lowest and player is falling.
+                lowest_block_y = Arena::get_block_row_position(row);
+                standing_on_block = player_bottom.y == lowest_block_y && player.velocity.y <= 0.0;
+
+                if standing_on_block {
+                    // sets player's velocity y component to zero.
+                    player.velocity.y = 0.0;
+
+                    // obtains the normal force
+                    block_normal = -weight;
+
+                    // obtains the frictional force, and point its direction to opposite velocity.
+                    let xvel = player.velocity.x;
+                    let fric_direction: f32 = -normalize_float(xvel);
+
+                    // if player's velocity is normalized to be 0, then we can directly set it to
+                    // prevent floating point rounding errors.
+                    player.velocity.x *= fric_direction.abs();
+
+                    // we are already on a block, so the blocktype should not be None
+                    let blocktype = self.blocks[col * VERTICAL_BLOCKS + row].expect("BlockType should not be None");
+
+
+                    let coeff_friction = block::get_block_friction(blocktype);
+                    let block_normal_magnitude = block_normal.y.abs();
+
+                    // minimizes so we do not overshoot (compares the force to reduce the player's
+                    // speed down to zero against the frictional force, and chooses the minimum)
+                    let max_allowed_friction_magnitude = xvel.abs() * total_mass / dt;
+                    let block_friction_magnitude = f32::min(coeff_friction * block_normal_magnitude, max_allowed_friction_magnitude);
+                    block_friction = fric_direction * block_friction_magnitude * Vec2::X;
+
+                    // we update run_friction: the force to get the player moving.
+                    // This is only relevant to when player inputs their left/right movement commands.
+                    run_friction = coeff_friction * block_normal_magnitude * Vec2::X;
+
+                    // can only drop down if we are standing on block, and not on the lowest platform.
+                    drop_input = input.has_mask(Input::Down) && row != VERTICAL_BLOCKS - 1;
+                }
+            }
+
+            // removes one jump if not touching ground. Else resets the player's jump count.
+            if !standing_on_block {
+                player.jumps_left = u8::min(player.jumps_count - 1, player.jumps_left);
+            } else {
+                player.jumps_left = player.jumps_count;
+            }
+
+            // accelerations from player inputs
+            // player's jump inputs
+            if has_jump {
+                jump = player.jump_force_and_decrement();
+            }
+
+            // Disallows any acceleration input that is in the same direction as the player's
+            // velocity if the player's velocity is already above its speed_cap.
+            //
+            // README: A better solution might employ correcting the run force by calculating its difference
+            // against the maximum allowed acceleration to reach the speed cap rather than just zeroing
+            // out the run input. This would probably result in a more "consistent" usage of the
+            // speed_cap.
+            let multiplier = 2.0;
+            run = multiplier * run_friction * direction;
+            if (run.x * player.velocity.x > 0.0) && (player.velocity.x.abs() >= player.speed_cap) {
+                run = Vec2::ZERO;
+            }
+
+            // gets player shooting bullet recoil.
+            // Since the recoil should punish a player less than a knockback, the force exerted by
+            // recoil will be a fraction of the impulse over time rather than the entire dp/dt.
+            if input.has_mask(Input::Shoot) {
+                let attack_status =  player.attack();
+
+                if attack_status == WeaponStatus::FireSuccess {
+                    gun_recoil = -player.get_bullet_momentum() / dt;
+
+                    // create a bullet at the player's position, velocity and direction.
+                    let bullet = player.create_new_bullet(self.bulletcount);
+                    self.bullets.insert(bullet.get_id(), bullet);
+                    self.bulletcount = self.bulletcount.wrapping_add(1);
+                }
+
+                else if attack_status == WeaponStatus::Empty {
+                    // TODO: sets the recoil correctly when player throws the weapon.
+                    gun_recoil = Vec2::ZERO;
+                }
+            }
+
+            // updates the player after calculating all the applied forces above.
+            let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
+            player.update(dt, lowest_block_y, total_force, drop_input, direction);
+        }
+    }
+
 
     /// mutable iterator through all the bullets on the map
     fn bullets_iterator_mut(&mut self) -> impl Iterator<Item = (&u16, &mut Bullet)> + '_ {
@@ -305,17 +302,12 @@ impl Arena {
         self.bullets.iter()
     }
 
-    /// obtains a reference to the player of the arena.
-    pub fn get_player(&self) -> &Player {
-        &self.player
-    }
-
     /// returns the first (row, col) that has a block below the current player. If no such block exists,
     /// then returns None for the first argument. Bool represents whether the left or right edge
     /// of the player found the first block.
     ///
     /// FIXME: This only works if the player's width is less than that of the block's width.
-    fn find_first_rowcol_below(&self,
+    fn find_first_rowcol_below(map: &Map,
                             left_grid_position: &Option<(usize, usize)>,
                             right_grid_position: &Option<(usize, usize)>) -> Option<(usize, usize)> {
 
@@ -325,14 +317,14 @@ impl Arena {
         let mut rightcol: usize = 0;
 
         if let Some((l_row, l_col)) = left_grid_position {
-            l_rowbelow_option = self.map.first_row_below(*l_row, *l_col);
+            l_rowbelow_option = map.first_row_below(*l_row, *l_col);
             leftcol = *l_col;
         } else {
             l_rowbelow_option = None;
         }
 
         if let Some((r_row, r_col)) = right_grid_position {
-            r_rowbelow_option = self.map.first_row_below(*r_row, *r_col);
+            r_rowbelow_option = map.first_row_below(*r_row, *r_col);
             rightcol = *r_col;
         } else {
             r_rowbelow_option = None;

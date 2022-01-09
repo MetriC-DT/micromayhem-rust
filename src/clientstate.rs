@@ -16,7 +16,7 @@ const DESIRED_FPS: u32 = 60;
 const DT: f32 = 1.0 / DESIRED_FPS as f32;
 
 #[derive(Debug)]
-pub struct GameState {
+pub struct ClientState {
     arena: Arena,
     mapmesh: SpriteBatch,
     inputmask: InputMask,
@@ -24,11 +24,11 @@ pub struct GameState {
 
 
 
-impl GameState {
-    pub fn new(arena: Arena, ctx: &mut Context, atlas: &Atlas) -> GameState {
-        let mapmesh = GameState::build_mapmesh(&arena, ctx, atlas).unwrap();
+impl ClientState {
+    pub fn new(arena: Arena, ctx: &mut Context, atlas: &Atlas) -> ClientState {
+        let mapmesh = ClientState::build_mapmesh(&arena, ctx, atlas).unwrap();
         let inputmask = InputMask::new();
-        GameState {arena, mapmesh, inputmask}
+        ClientState {arena, mapmesh, inputmask}
     }
 
     /// TODO: Use player sprite rather than just a rectangle.
@@ -64,7 +64,7 @@ impl GameState {
 }
 
 
-impl EventHandler for GameState {
+impl EventHandler for ClientState {
     fn update(&mut self, ctx: &mut ggez::Context) -> GameResult {
         // Rely on ggez's built-in timer for deciding when to update the game, and how many times.
         // If the update is early, there will be no cycles, otherwises, the logic will run once for each
@@ -81,17 +81,19 @@ impl EventHandler for GameState {
         graphics::clear(ctx, Color::from_rgb_u32(BACKGROUND_COLOR));
 
         // gets new viewport to find where to position the camera.
-        let player = self.arena.get_player();
+        //
+        // TODO: obtain the correct player (not just the first one).
+        let player = self.arena.get_players_iter().nth(0).unwrap();
         let viewport: Viewport = Viewport::get_viewport_on_player(player, ctx);
         let offset = viewport.get_offset();
 
         // draws everything else.
         graphics::draw(ctx, &self.mapmesh, DrawParam::default().dest(offset))?;
 
-        GameState::draw_player(ctx, player, offset, Color::WHITE)?;
+        ClientState::draw_player(ctx, player, offset, Color::WHITE)?;
 
-        for p in self.arena.get_other_players_iter() {
-            GameState::draw_player(ctx, p, offset, Color::GREEN)?;
+        for p in self.arena.get_players_iter() {
+            ClientState::draw_player(ctx, p, offset, Color::GREEN)?;
         }
 
         // draws bullets

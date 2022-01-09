@@ -1,4 +1,5 @@
-pub mod gamestate;
+pub mod clientstate;
+pub mod serverstate;
 pub mod configuration;
 pub mod viewport;
 

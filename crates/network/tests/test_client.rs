@@ -17,8 +17,8 @@ fn client_init_fail() {
 
 #[test]
 fn client_connect() -> Result<()> {
-    let c1 = Client::new(DEFAULT_PORT + 2, PROTOCOL_ID).unwrap();
-    let c2 = Client::new(DEFAULT_PORT - 2, PROTOCOL_ID).unwrap();
+    let mut c1 = Client::new(DEFAULT_PORT + 2, PROTOCOL_ID).unwrap();
+    let mut c2 = Client::new(DEFAULT_PORT - 2, PROTOCOL_ID).unwrap();
 
     let success1 = c1.connect(format!("0.0.0.0:{}", DEFAULT_PORT - 2).as_str());
     let success2 = c2.connect(format!("0.0.0.0:{}", DEFAULT_PORT + 2).as_str());

@@ -214,6 +214,8 @@ impl Map {
         let mut blockrects = [None; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS];
         for blocktype in BlockType::iter() {
             let MapBits(bits) = self.get_bits_of_type(blocktype);
+
+            // TODO - refactor to use mutable iterator, or a map for additional lazy eval.
             for i in 0..VERTICAL_BLOCKS * HORIZONTAL_BLOCKS {
                 if (bits & (1 << i)) != 0 {
                     blockrects[i] = Some(blocktype);

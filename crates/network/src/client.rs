@@ -1,4 +1,4 @@
-use std::{net::{UdpSocket, SocketAddr}, io::{self, ErrorKind}};
+use std::{net::{UdpSocket, SocketAddr, ToSocketAddrs}, io::{self, ErrorKind}};
 
 use crate::packet::{Packet, PACKET_BYTES, ProtocolId};
 
@@ -12,7 +12,9 @@ pub struct Client {
     ack: u16,
     ack_bitfield: u32,
     recv_buffer: Vec<u8>,
-    recent_packet: Option<Packet>
+    recent_packet: Option<Packet>,
+    remotes: Vec<String>,
+    max_remotes: u8
 }
 
 impl Client {
@@ -20,17 +22,32 @@ impl Client {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
         let socket = UdpSocket::bind(addr)?;
         let sequence = 0;
-        let ack = u16::MAX - 33; // HACK: lets the first recv ack bitfield be zero...
+        let ack = u16::MAX - 33; // HACK: lets the first recv ack bitfield be zero because 33 > 32 bits (u32)
         let ack_bitfield = 0;
         let recv_buffer = vec![0; PACKET_BYTES];
         let recent_packet = None;
+        let max_remotes = 1;
+        let remotes = Vec::new();
         socket.set_nonblocking(true)?;
-        Ok(Self {socket, sequence, protocol, ack, ack_bitfield, recv_buffer, recent_packet})
+        Ok(Self {socket, sequence, protocol, ack, ack_bitfield, recv_buffer, recent_packet, remotes, max_remotes})
     }
 
-    pub fn connect(&self, addr: &str) -> Result<(), io::Error> {
-        self.socket.connect(addr)?;
-        Ok(())
+    /// Verifies that the string can be transformed to a valid address,
+    /// then appends a remote server for this client to communicate with.
+    pub fn connect(&mut self, addr: &str) -> Result<(), io::Error> {
+        if self.remotes.len() < self.max_remotes.into() {
+            addr.to_socket_addrs()?;
+            self.remotes.push(addr.to_string());
+            Ok(())
+        } else {
+            Err(ErrorKind::AddrInUse.into())
+        }
+    }
+
+    /// sets the maximum number of remote clients that this client can talk to.
+    /// Mainly used for server configuration.
+    pub(crate) fn set_max_remotes(&mut self, n: u8) {
+        self.max_remotes = n;
     }
 
     /// obtains the raw socket of this client.
@@ -43,7 +60,12 @@ impl Client {
     pub fn send_data(&mut self, data: &[u8]) -> Result<(), io::Error> {
         let packet = Packet::new(self.protocol, self.sequence, self.ack, self.ack_bitfield, data)?;
         let bytes: Vec<u8> = packet.into();
-        self.socket.send(&bytes[..])?;
+
+        // sends the data to every one of the remotes.
+        for remote in &self.remotes {
+            self.socket.send_to(&bytes[..], remote)?;
+        }
+
         self.sequence = self.sequence.wrapping_add(1);
         Ok(())
     }
@@ -91,11 +113,13 @@ impl Client {
         }
     }
 
-    pub(crate) fn get_bitfield(&self) -> u32 {
+    /// obtains the bitfield ack for this client.
+    pub fn get_bitfield(&self) -> u32 {
         self.ack_bitfield
     }
 
-    pub(crate) fn get_sequence(&self) -> u16 {
+    /// obtains the sequence number for this client.
+    pub fn get_sequence(&self) -> u16 {
         self.sequence
     }
 
