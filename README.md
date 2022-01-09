@@ -10,13 +10,13 @@ Gun down your opponents from the platform, and avoid getting shot down yourself.
 - `crates` - contains the different "subsystems" that make up the game. See more information below.
 
 ## The Different Crates:
-### [Game](./crates/game/README.md)
+### [Game](./crates/game/)
 Represents the game logic and physics. Runs independently of graphics.
 
-### [Gui](./crates/gui/README.md)
+### [Gui](./crates/gui/)
 Contains code to load GUI elements for game menu as well as in game sprites.
 
-### [Network](./crates/network/README.md)
+### [Network](./crates/network/)
 Netcode for the client and server. Currently requires massive amounts of refactoring
 in order to include elements of security and data redundancy and checksums.
 
