@@ -37,6 +37,8 @@ pub struct Arena {
 impl Default for Arena {
     fn default() -> Self {
         let mut new_arena = Arena::new(Map::default());
+
+        // TODO: remove
         new_arena.add_player(Player::default());
 
         new_arena

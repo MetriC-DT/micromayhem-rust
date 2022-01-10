@@ -5,7 +5,8 @@ use std::{net::{SocketAddr, ToSocketAddrs}, io, thread::{self, JoinHandle}};
 /// Wrapper for the client socket. Implementation of orderliness
 /// and "reliability" given by the `laminar` package.
 ///
-/// TODO: enable some form of packet verification with the config options for laminar.
+/// TODO: enable some form of packet verification and other configurations
+/// with the config options for laminar.
 pub struct Client {
     sender: Sender<Packet>,
     receiver: Receiver<SocketEvent>,
@@ -32,11 +33,7 @@ impl Client {
         let sock_addrs = addr.to_socket_addrs()?;
 
         for sock_addr in sock_addrs {
-            if self.remotes.len() < self.max_remotes.into() {
-                self.remotes.push(sock_addr);
-            } else {
-                return Err(io::ErrorKind::AddrInUse.into())
-            }
+            self.connect_addr(&sock_addr)?;
         }
         Ok(())
     }
@@ -73,7 +70,7 @@ impl Client {
         // sends the data to every one of the remotes.
         for remote in &self.remotes {
             let packet = Packet::reliable_sequenced(*remote, data.to_vec(), None);
-            self.sender.send(packet)?;
+            self.sender.try_send(packet)?;
         }
         Ok(())
     }
@@ -90,9 +87,9 @@ impl Client {
                 SocketEvent::Timeout(addr) => {self.remove_remote(&addr)?; Ok(None)},
                 SocketEvent::Disconnect(addr) => {self.remove_remote(&addr)?; Ok(None)},
             }
-        } else {
+        }
+        else {
             Err(io::ErrorKind::InvalidData.into())
         }
     }
-
 }
