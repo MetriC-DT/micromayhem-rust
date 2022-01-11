@@ -106,7 +106,7 @@ impl Client {
         Ok(())
     }
 
-    pub fn get_remotes(&self) -> &Vec<SocketAddr> {
+    pub(crate) fn get_remotes(&self) -> &Vec<SocketAddr> {
         &self.remotes
     }
 

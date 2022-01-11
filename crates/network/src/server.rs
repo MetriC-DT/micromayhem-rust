@@ -25,7 +25,7 @@ impl Server {
         self.serverclient.receive()
     }
 
-    pub fn get_remotes(&self) -> &Vec<SocketAddr> {
+    pub(crate) fn get_remotes(&self) -> &Vec<SocketAddr> {
         self.serverclient.get_remotes()
     }
 }

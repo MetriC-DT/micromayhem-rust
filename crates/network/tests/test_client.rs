@@ -17,21 +17,6 @@ fn client_init_fail() {
 }
 
 #[test]
-fn client_connect() -> Result<()> {
-    let mut c1 = Client::new(DEFAULT_PORT + 2).unwrap();
-    let mut s1 = Server::new(DEFAULT_PORT - 2, 4).unwrap();
-
-    c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 2))).unwrap();
-
-    sleep(Duration::from_millis(50));
-    s1.receive();
-
-    assert_eq!(s1.get_remotes().len(), 1);
-    assert_eq!(c1.get_remotes().len(), 1);
-    Ok(())
-}
-
-#[test]
 fn client_recv() -> Result<()> {
     let mut c1 = Client::new(DEFAULT_PORT + 3).unwrap();
     let mut s1 = Server::new(DEFAULT_PORT - 3, 4).unwrap();
@@ -60,7 +45,6 @@ fn client_recv_2() -> Result<()> {
     let mut c1 = Client::new(DEFAULT_PORT + 4).unwrap();
     let mut s1 = Server::new(DEFAULT_PORT - 4, 4).unwrap();
     c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 4))).unwrap();
-    // s1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT + 4)));
 
     sleep(Duration::from_millis(50));
 
@@ -98,7 +82,6 @@ fn client_recv_consecutive() -> Result<()> {
     let mut c1 = Client::new(DEFAULT_PORT + 5).unwrap();
     let mut s1 = Server::new(DEFAULT_PORT - 5, 4).unwrap();
     c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 5))).unwrap();
-    // s1.add_remote_addr(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT + 5)));
 
     let payload_1: i32 = 32;
     let payload_2: i32 = 33;
