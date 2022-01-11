@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, io};
+use std::net::SocketAddr;
 
 use crossbeam_channel::TrySendError;
 use laminar::{ErrorKind, Packet};
@@ -17,9 +17,8 @@ impl Server {
         Ok(Self { serverclient })
     }
 
-    pub fn connect_addr(&mut self, addr: &SocketAddr) -> Result<(), io::Error> {
-        self.serverclient.connect_addr(addr)?;
-        Ok(())
+    pub fn add_client(&mut self, addr: &SocketAddr) {
+        self.serverclient.connect(addr);
     }
 
     pub fn send_data(&mut self, data: &[u8]) -> Result<(), TrySendError<Packet>> {
@@ -27,13 +26,13 @@ impl Server {
         Ok(())
     }
 
-    pub fn receive(&mut self) -> Result<Option<Vec<u8>>, io::Error> {
+    pub fn receive(&mut self) -> Vec<Vec<u8>> {
         self.serverclient.receive()
     }
 }
 
 impl Default for Server {
     fn default() -> Self {
-        Server::new(DEFAULT_PORT, 4).unwrap()
+        Server::new(DEFAULT_PORT, 4).expect("Cannot create default server")
     }
 }

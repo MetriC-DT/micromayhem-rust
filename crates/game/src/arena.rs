@@ -141,8 +141,12 @@ impl Arena {
 
     /// Simulates the arena when delta time `dt` has passed and all the player's inputs are
     /// accounted for.
-    pub fn update(&mut self, dt: f32, input: &InputMask) {
-        self.update_players(dt, input);
+    ///
+    /// the `inputs` variable represents the vector of inputs that the arena has received from the
+    /// players (probably through network). It MUST have the same size as the players array and
+    /// also have the indices of the input match the indices of the players that inputted them.
+    pub fn update(&mut self, dt: f32, inputs: &Vec<InputMask>) {
+        self.update_players(dt, inputs);
         self.update_bullets(dt);
     }
 
@@ -167,8 +171,8 @@ impl Arena {
     }
 
     /// updates the players in the arena based on their respective inputs.
-    fn update_players(&mut self, dt: f32, input: &InputMask) {
-        for player in self.players.iter_mut() {
+    fn update_players(&mut self, dt: f32, inputs: &Vec<InputMask>) {
+        for (player, input) in self.players.iter_mut().zip(inputs.iter()) {
             // total mass obtains mass of player + weapon.
             let total_mass = player.get_total_mass();
             let player_bottom = player.position + Vec2::new(0.0, player.height);

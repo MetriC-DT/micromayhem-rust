@@ -10,7 +10,7 @@ pub enum Input {
     Throw,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct InputMask(u8);
 
 impl InputMask {

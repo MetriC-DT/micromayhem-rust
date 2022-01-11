@@ -1,6 +1,6 @@
 use crossbeam_channel::{Sender, Receiver, TrySendError};
 use laminar::{Socket, ErrorKind, Packet, SocketEvent};
-use std::{net::{SocketAddr, ToSocketAddrs}, io, thread::{self, JoinHandle}};
+use std::{net::SocketAddr, thread::{self, JoinHandle}};
 
 /// Wrapper for the client socket. Implementation of orderliness
 /// and "reliability" given by the `laminar` package.
@@ -27,24 +27,15 @@ impl Client {
         Ok(Self {sender, receiver, max_remotes, remotes, _poll_thread})
     }
 
-    /// Verifies that the string can be transformed to a valid address,
-    /// then appends a remote server for this client to communicate with.
-    pub fn connect(&mut self, addr: &str) -> Result<(), io::Error> {
-        let sock_addrs = addr.to_socket_addrs()?;
-
-        for sock_addr in sock_addrs {
-            self.connect_addr(&sock_addr)?;
-        }
-        Ok(())
+    /// Appends the remote addr that the client can communicate with
+    pub fn connect(&mut self, addr: &SocketAddr) {
+        Client::add_remote(&mut self.remotes, addr, self.max_remotes);
     }
 
     /// connects to a valid address.
-    pub fn connect_addr(&mut self, addr: &SocketAddr) -> Result<(), io::Error> {
-        if self.remotes.len() < self.max_remotes.into() {
-            self.remotes.push(*addr);
-            Ok(())
-        } else {
-            Err(io::ErrorKind::AddrInUse.into())
+    fn add_remote(remotes: &mut Vec<SocketAddr>, addr: &SocketAddr, max_remotes: u8) {
+        if remotes.len() < max_remotes.into() {
+            remotes.push(*addr);
         }
     }
 
@@ -54,13 +45,10 @@ impl Client {
         self.max_remotes = n;
     }
 
-    fn remove_remote(&mut self, remote: &SocketAddr) -> Result<(), io::Error> {
-        let index = self.remotes.iter().position(|x| x == remote);
+    fn remove_remote(remotes: &mut Vec<SocketAddr>, remote: &SocketAddr) {
+        let index = remotes.iter().position(|x| x == remote);
         if let Some(i) = index {
-            self.remotes.swap_remove(i);
-            Ok(())
-        } else {
-            Err(io::ErrorKind::NotFound.into())
+            remotes.swap_remove(i);
         }
     }
 
@@ -77,19 +65,28 @@ impl Client {
 
     /// Receives a `Packet` and then only returns the data of the packet if it is
     /// more recent than the previous one.
-    pub fn receive(&mut self) -> Result<Option<Vec<u8>>, io::Error> {
-        let resultdata = self.receiver.try_recv();
-
-        if let Ok(event) = resultdata {
+    pub fn receive(&mut self) -> Vec<Vec<u8>> {
+        let mut returned_data = Vec::with_capacity(self.remotes.len());
+        for event in self.receiver.try_iter() {
             match event {
-                SocketEvent::Packet(packet) => Ok(Some(packet.payload().to_vec())),
-                SocketEvent::Connect(addr) => {self.connect_addr(&addr)?; Ok(None)},
-                SocketEvent::Timeout(addr) => {self.remove_remote(&addr)?; Ok(None)},
-                SocketEvent::Disconnect(addr) => {self.remove_remote(&addr)?; Ok(None)},
+                SocketEvent::Packet(packet) => {
+                    returned_data.push(packet.payload().to_vec())
+                },
+
+                SocketEvent::Connect(addr) => {
+                    Client::add_remote(&mut self.remotes, &addr, self.max_remotes);
+                },
+
+                SocketEvent::Timeout(addr) => {
+                    Client::remove_remote(&mut self.remotes, &addr);
+                },
+
+                SocketEvent::Disconnect(addr) => {
+                    Client::remove_remote(&mut self.remotes, &addr);
+                },
             }
         }
-        else {
-            Err(io::ErrorKind::InvalidData.into())
-        }
+
+        returned_data
     }
 }
