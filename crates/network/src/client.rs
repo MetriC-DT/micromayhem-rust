@@ -118,23 +118,24 @@ impl Client {
 
     /// Receives a `Packet` and then only returns the data of the packet if it is
     /// more recent than the previous one.
-    pub fn receive(&mut self) -> Vec<Vec<u8>> {
+    ///
+    /// FIXME: Use the Connect event to monitor actual connections instead of the packet hack.
+    pub fn receive(&mut self) -> Vec<Packet> {
         let mut returned_data = Vec::with_capacity(self.remotes.len());
         for event in self.receiver.try_iter() {
             match event {
                 SocketEvent::Packet(packet) => {
                     // if received packet is struct ConnectionData, then send back the ack
-                    // This will automatically call the connect event, so client will be added.
                     let data = packet.payload().to_vec();
                     if let Ok(connectdata) = ConnectData::try_from(&data) {
                         let addr = &packet.addr();
                         if !connectdata.ack {
                             self.send_connect_ack(addr, true).unwrap();
+                            Client::add_remote(&mut self.remotes, &addr, self.max_remotes);
                         }
-                        Client::add_remote(&mut self.remotes, &addr, self.max_remotes);
                     }
                     else {
-                        returned_data.push(data);
+                        returned_data.push(packet);
                     }
                 },
 

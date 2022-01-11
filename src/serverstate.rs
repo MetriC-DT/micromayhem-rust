@@ -1,4 +1,4 @@
-use game::arena::Arena;
+use game::{arena::Arena, input::InputMask};
 use network::server::Server;
 
 pub struct ServerState {
@@ -18,5 +18,12 @@ impl ServerState {
     pub fn update(&mut self, dt: f32) {
         // obtain player inputs from network and feed it to the arena update function.
         let messages = self.server.receive();
+
+        // FIXME: for now, the only types a server can receive are `Input` types.
+        for message in messages {
+            let sender = message.addr();
+            let data = message.payload().get(0).unwrap();
+            let input = InputMask::from(*data);
+        }
     }
 }

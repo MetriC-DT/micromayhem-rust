@@ -32,7 +32,7 @@ fn client_recv() -> Result<()> {
     assert_eq!(data.len(), 1);
 
     // checks first 4 bytes and converts it into an i32 to check if it matches
-    let data = &data[0][0..4].try_into().unwrap();
+    let data = &data[0].payload()[0..4].try_into().unwrap();
     let result = i32::from_be_bytes(*data);
 
     assert_eq!(result, payload);
@@ -69,7 +69,7 @@ fn client_recv_2() -> Result<()> {
     assert_eq!(data.len(), 1);
 
     // checks first 4 bytes and converts it into an i32 to check if it matches
-    let bytes = &data[0][0..4];
+    let bytes = &data[0].payload()[0..4];
     let result = i32::from_le_bytes(bytes.try_into().unwrap());
 
     assert_eq!(result, payload_2);

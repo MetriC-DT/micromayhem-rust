@@ -21,7 +21,7 @@ impl Server {
         Ok(self.serverclient.send_data(data)?)
     }
 
-    pub fn receive(&mut self) -> Vec<Vec<u8>> {
+    pub fn receive(&mut self) -> Vec<Packet> {
         self.serverclient.receive()
     }
 
