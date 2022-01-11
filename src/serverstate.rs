@@ -17,6 +17,6 @@ impl ServerState {
     /// then updates the state of the game.
     pub fn update(&mut self, dt: f32) {
         // obtain player inputs from network and feed it to the arena update function.
-        // let messages = self.server.
+        let messages = self.server.receive();
     }
 }

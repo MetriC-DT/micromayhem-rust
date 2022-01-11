@@ -1,47 +1,50 @@
-use network::{client::Client, DEFAULT_PORT};
+use network::{client::Client, DEFAULT_PORT, server::Server};
 
 use std::{io::Result, thread::sleep, time::Duration, net::SocketAddr};
 
 #[test]
 fn client_init() {
     let _c1 = Client::new(DEFAULT_PORT - 1).unwrap();
-    let _c2 = Client::new(DEFAULT_PORT + 1).unwrap();
+    let _s1 = Client::new(DEFAULT_PORT + 1).unwrap();
 }
 
 #[test]
 fn client_init_fail() {
     let _c1 = Client::new(DEFAULT_PORT).unwrap();
-    let c2 = Client::new(DEFAULT_PORT);
+    let s1 = Server::new(DEFAULT_PORT, 4);
 
-    assert!(c2.is_err());
+    assert!(s1.is_err());
 }
 
 #[test]
 fn client_connect() -> Result<()> {
     let mut c1 = Client::new(DEFAULT_PORT + 2).unwrap();
-    let mut c2 = Client::new(DEFAULT_PORT - 2).unwrap();
+    let mut s1 = Server::new(DEFAULT_PORT - 2, 4).unwrap();
 
-    c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 2)));
-    c2.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT + 2)));
+    c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 2))).unwrap();
 
+    sleep(Duration::from_millis(50));
+    s1.receive();
+
+    assert_eq!(s1.get_remotes().len(), 1);
+    assert_eq!(c1.get_remotes().len(), 1);
     Ok(())
 }
 
 #[test]
 fn client_recv() -> Result<()> {
     let mut c1 = Client::new(DEFAULT_PORT + 3).unwrap();
-    let mut c2 = Client::new(DEFAULT_PORT - 3).unwrap();
-    c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 3)));
-    c2.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT + 3)));
+    let mut s1 = Server::new(DEFAULT_PORT - 3, 4).unwrap();
+    c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 3))).unwrap();
 
     let payload: i32 = 32;
     c1.send_data(&payload.to_be_bytes().to_vec()).unwrap();
 
     sleep(Duration::from_millis(50));
 
-    let data = &c2.receive();
+    let data = &s1.receive();
 
-    assert!(data.len() == 1);
+    assert_eq!(data.len(), 1);
 
     // checks first 4 bytes and converts it into an i32 to check if it matches
     let data = &data[0][0..4].try_into().unwrap();
@@ -55,9 +58,11 @@ fn client_recv() -> Result<()> {
 #[test]
 fn client_recv_2() -> Result<()> {
     let mut c1 = Client::new(DEFAULT_PORT + 4).unwrap();
-    let mut c2 = Client::new(DEFAULT_PORT - 4).unwrap();
-    c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 4)));
-    c2.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT + 4)));
+    let mut s1 = Server::new(DEFAULT_PORT - 4, 4).unwrap();
+    c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 4))).unwrap();
+    // s1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT + 4)));
+
+    sleep(Duration::from_millis(50));
 
     let payload_1: i32 = 32;
     let payload_2: i32 = 33;
@@ -66,8 +71,8 @@ fn client_recv_2() -> Result<()> {
     // required in order to actually receive the data from the sender
     sleep(Duration::from_millis(50));
 
-    let data = &c2.receive();
-    assert!(data.len() == 1);
+    let data = &s1.receive();
+    assert_eq!(data.len(), 1);
 
     // 2nd data received.
     c1.send_data(&payload_2.to_le_bytes().to_vec()).unwrap();
@@ -75,9 +80,9 @@ fn client_recv_2() -> Result<()> {
     // required in order to actually receive the data from the sender
     sleep(Duration::from_millis(50));
 
-    let data = &c2.receive();
+    let data = &s1.receive();
 
-    assert!(data.len() == 1);
+    assert_eq!(data.len(), 1);
 
     // checks first 4 bytes and converts it into an i32 to check if it matches
     let bytes = &data[0][0..4];
@@ -91,9 +96,9 @@ fn client_recv_2() -> Result<()> {
 #[test]
 fn client_recv_consecutive() -> Result<()> {
     let mut c1 = Client::new(DEFAULT_PORT + 5).unwrap();
-    let mut c2 = Client::new(DEFAULT_PORT - 5).unwrap();
-    c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 5)));
-    c2.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT + 5)));
+    let mut s1 = Server::new(DEFAULT_PORT - 5, 4).unwrap();
+    c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT - 5))).unwrap();
+    // s1.add_remote_addr(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT + 5)));
 
     let payload_1: i32 = 32;
     let payload_2: i32 = 33;
@@ -103,7 +108,7 @@ fn client_recv_consecutive() -> Result<()> {
 
     sleep(Duration::from_millis(50));
 
-    let data = c2.receive();
-    assert!(data.len() == 2);
+    let data = s1.receive();
+    assert_eq!(data.len(), 2);
     Ok(())
 }

@@ -1,6 +1,5 @@
 pub mod client;
 pub mod server;
-mod unit_tests;
 
 /// default port the application runs
 pub const DEFAULT_PORT: u16 = 30000;

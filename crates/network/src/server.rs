@@ -17,17 +17,16 @@ impl Server {
         Ok(Self { serverclient })
     }
 
-    pub fn add_client(&mut self, addr: &SocketAddr) {
-        self.serverclient.connect(addr);
-    }
-
     pub fn send_data(&mut self, data: &[u8]) -> Result<(), TrySendError<Packet>> {
-        self.serverclient.send_data(data)?;
-        Ok(())
+        Ok(self.serverclient.send_data(data)?)
     }
 
     pub fn receive(&mut self) -> Vec<Vec<u8>> {
         self.serverclient.receive()
+    }
+
+    pub fn get_remotes(&self) -> &Vec<SocketAddr> {
+        self.serverclient.get_remotes()
     }
 }
 
