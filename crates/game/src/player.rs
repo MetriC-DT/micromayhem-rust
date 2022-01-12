@@ -33,6 +33,12 @@ pub struct Player {
 }
 
 impl Player {
+    pub fn new(name: &str) -> Self {
+        let mut player = Player::default();
+        player.name = name.to_string();
+
+        player
+    }
     /// Updates the position and velocities of the player.
     ///
     /// `max_y` is the maximum y unit that the player can drop down to. This is used

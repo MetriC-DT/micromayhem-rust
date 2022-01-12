@@ -1,5 +1,6 @@
 pub mod client;
 pub mod server;
+pub mod message;
 mod unit_tests;
 
 /// default port the application runs

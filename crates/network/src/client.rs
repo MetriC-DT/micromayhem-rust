@@ -1,37 +1,10 @@
 use crossbeam_channel::{Sender, Receiver, TrySendError};
+use game::arena::Arena;
 use laminar::{Socket, ErrorKind, Packet, SocketEvent};
-use std::{net::SocketAddr, thread::{self, JoinHandle}, io};
+use std::{net::SocketAddr, thread::{self, JoinHandle, sleep}, time::Duration};
 
-#[derive(Debug)]
-struct ConnectData {
-    ack: bool,
-}
+use crate::message::{Message, HeaderByte};
 
-impl ConnectData {
-    pub fn new(ack: bool) -> Self {
-        Self { ack }
-    }
-}
-
-impl TryFrom<&Vec<u8>> for ConnectData {
-    type Error = io::Error;
-
-    fn try_from(value: &Vec<u8>) -> Result<Self, Self::Error> {
-        if value.len() == 1 {
-            let bytes = value.get(0).unwrap();
-            let ack = *bytes != 0;
-            Ok(Self {ack})
-        } else {
-            Err(io::ErrorKind::InvalidData.into())
-        }
-    }
-}
-
-impl Into<Vec<u8>> for ConnectData {
-    fn into(self) -> Vec<u8> {
-        vec![self.ack as u8]
-    }
-}
 
 /// Wrapper for the client socket. Implementation of orderliness
 /// and "reliability" given by the `laminar` package.
@@ -43,6 +16,7 @@ pub struct Client {
     receiver: Receiver<SocketEvent>,
     remotes: Vec<SocketAddr>,
     max_remotes: u8,
+    arena: Option<Arena>,
     _poll_thread: JoinHandle<()>
 }
 
@@ -54,20 +28,15 @@ impl Client {
         let max_remotes = 1;
         let remotes = Vec::new();
         let _poll_thread = thread::spawn(move || socket.start_polling());
+        let arena = None;
 
-        Ok(Self {sender, receiver, max_remotes, remotes, _poll_thread})
+        Ok(Self {sender, receiver, max_remotes, remotes, arena, _poll_thread})
     }
 
-    pub fn connect(&mut self, remote: &SocketAddr) -> Result<(), TrySendError<Packet>> {
-        self.send_connect_ack(remote, false)?;
-        self.add_remote_addr(remote);
+    pub fn connect(&mut self, remote: &SocketAddr, name: &str) -> Result<(), TrySendError<Packet>> {
+        let message = Message::write_connect(name);
+        Client::send_to(&self.sender, remote, &message).unwrap();
         Ok(())
-    }
-
-    fn send_connect_ack(&self, remote: &SocketAddr, ack: bool) -> Result<(), TrySendError<Packet>> {
-        let connectdata = ConnectData::new(ack);
-        let bytevec: Vec<u8> = connectdata.into();
-        Ok(self.send_to(&remote, &bytevec[..])?)
     }
 
     /// Appends the remote addr that the client can communicate with
@@ -89,7 +58,7 @@ impl Client {
     }
 
     /// removes the given socket from the remotes list.
-    fn remove_remote(remotes: &mut Vec<SocketAddr>, remote: &SocketAddr) {
+    fn swap_remove_remote(remotes: &mut Vec<SocketAddr>, remote: &SocketAddr) {
         let index = remotes.iter().position(|x| x == remote);
         if let Some(i) = index {
             remotes.swap_remove(i);
@@ -98,10 +67,10 @@ impl Client {
 
     /// sends the data contained in a packet to a server.
     /// Also increments the sequence counter for the client, which may result in overflowing.
-    pub fn send_data(&self, data: &[u8]) -> Result<(), TrySendError<Packet>> {
+    pub fn send_message(&self, message: &Message) -> Result<(), TrySendError<Packet>> {
         // sends the data to every one of the remotes.
         for remote in &self.remotes {
-            self.send_to(remote, data)?;
+            Client::send_to(&self.sender, remote, &message)?;
         }
         Ok(())
     }
@@ -111,46 +80,59 @@ impl Client {
     }
 
     /// sends the data to a remote socket.
-    fn send_to(&self, remote: &SocketAddr, data: &[u8]) -> Result<(), TrySendError<Packet>> {
-        let packet = Packet::reliable_sequenced(*remote, data.to_vec(), None);
-        Ok(self.sender.try_send(packet)?)
+    fn send_to(sender: &Sender<Packet>, remote: &SocketAddr, message: &Message) -> Result<(), TrySendError<Packet>> {
+        let packet = Packet::reliable_sequenced(*remote, message.to_vec(), None);
+        Ok(sender.try_send(packet)?)
+    }
+
+    /// function to call when the client receives a packet.
+    fn on_packet_recv(sender: &Sender<Packet>, arena: &mut Option<Arena>, packet: Packet) {
+        let payload = packet.payload();
+        let addr = packet.addr();
+        let m = Message::try_from(payload.into_iter().cloned().collect::<Vec<u8>>());
+
+        if let Ok(message) = m {
+            match message.header {
+                HeaderByte::Connect => {
+                    Client::send_to(sender, &addr, &Message::write_verify()).unwrap();
+                },
+                HeaderByte::Verify => {
+                    Client::send_to(sender, &addr, &Message::write_request()).unwrap();
+                },
+                HeaderByte::Request => {
+                    // sends the compressed arena state.
+                },
+
+                HeaderByte::Disconnect => todo!(),
+                HeaderByte::State => todo!(),
+                HeaderByte::Input => todo!(),
+            }
+        }
     }
 
     /// Receives a `Packet` and then only returns the data of the packet if it is
     /// more recent than the previous one.
     ///
     /// FIXME: Use the Connect event to monitor actual connections instead of the packet hack.
-    pub fn receive(&mut self) -> Vec<Packet> {
-        let mut returned_data = Vec::with_capacity(self.remotes.len());
+    pub fn receive(&mut self) {
         for event in self.receiver.try_iter() {
             match event {
                 SocketEvent::Packet(packet) => {
-                    // if received packet is struct ConnectionData, then send back the ack
-                    let data = packet.payload().to_vec();
-                    if let Ok(connectdata) = ConnectData::try_from(&data) {
-                        let addr = &packet.addr();
-                        if !connectdata.ack {
-                            self.send_connect_ack(addr, true).unwrap();
-                            Client::add_remote(&mut self.remotes, &addr, self.max_remotes);
-                        }
-                    }
-                    else {
-                        returned_data.push(packet);
-                    }
+                    Client::on_packet_recv(&self.sender, &mut self.arena, packet);
                 },
 
                 SocketEvent::Timeout(addr) => {
-                    Client::remove_remote(&mut self.remotes, &addr);
+                    Client::swap_remove_remote(&mut self.remotes, &addr);
                 },
 
                 SocketEvent::Disconnect(addr) => {
-                    Client::remove_remote(&mut self.remotes, &addr);
+                    Client::swap_remove_remote(&mut self.remotes, &addr);
                 },
 
-                _ => {},
+                SocketEvent::Connect(addr) => {
+                    Client::add_remote(&mut self.remotes, &addr, self.max_remotes);
+                }
             }
         }
-
-        returned_data
     }
 }

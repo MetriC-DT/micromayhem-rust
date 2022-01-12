@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use crossbeam_channel::TrySendError;
 use laminar::{ErrorKind, Packet};
 
-use crate::{client::Client, DEFAULT_PORT};
+use crate::{client::Client, DEFAULT_PORT, message::Message};
 
 /// Represents the server that collects information sent to it from the various connected clients.
 pub struct Server {
@@ -17,11 +17,11 @@ impl Server {
         Ok(Self { serverclient })
     }
 
-    pub fn send_data(&mut self, data: &[u8]) -> Result<(), TrySendError<Packet>> {
-        Ok(self.serverclient.send_data(data)?)
+    pub fn send_data(&mut self, message: &Message) -> Result<(), TrySendError<Packet>> {
+        Ok(self.serverclient.send_message(message)?)
     }
 
-    pub fn receive(&mut self) -> Vec<Packet> {
+    pub fn receive(&mut self) {
         self.serverclient.receive()
     }
 

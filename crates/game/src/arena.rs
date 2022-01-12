@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::slice::SliceIndex;
 
 use crate::ARENA_WIDTH;
 use crate::ERROR_THRESHOLD;
@@ -36,12 +37,7 @@ pub struct Arena {
 
 impl Default for Arena {
     fn default() -> Self {
-        let mut new_arena = Arena::new(Map::default());
-
-        // TODO: remove
-        new_arena.add_player(Player::default());
-
-        new_arena
+        Arena::new(Map::default())
     }
 }
 
@@ -62,8 +58,13 @@ impl Arena {
     }
 
     /// adds a new player to the arena.
-    pub fn add_player(&mut self, player: Player) {
+    pub fn add_player(&mut self, player: Player) -> &Player {
         self.players.push(player);
+        self.players.last().unwrap()
+    }
+
+    pub fn swap_remove_player(&mut self, index: usize) {
+        self.players.swap_remove(index);
     }
 
     /// gets an iterator over all of the other players.
