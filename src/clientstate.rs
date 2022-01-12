@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use game::player::Player;
 use game::arena::Arena;
 use game::input::{InputMask, Input};
@@ -8,6 +10,8 @@ use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::{Color, Mesh, DrawMode, DrawParam};
 use glam::Vec2;
 use gui::spriteloader::Atlas;
+use network::DEFAULT_PORT;
+use network::client::Client;
 use crate::BACKGROUND_COLOR;
 use crate::viewport::Viewport;
 
@@ -17,7 +21,7 @@ const DT: f32 = 1.0 / DESIRED_FPS as f32;
 
 #[derive(Debug)]
 pub struct ClientState {
-    arena: Arena,
+    client: Client,
     mapmesh: SpriteBatch,
     inputmask: InputMask,
 }
@@ -25,10 +29,19 @@ pub struct ClientState {
 
 
 impl ClientState {
-    pub fn new(arena: Arena, ctx: &mut Context, atlas: &Atlas) -> ClientState {
-        let mapmesh = ClientState::build_mapmesh(&arena, ctx, atlas).unwrap();
-        let inputmask = InputMask::new();
-        ClientState {arena, mapmesh, inputmask}
+    pub fn new(ctx: &mut Context, atlas: &Atlas, server: &SocketAddr, name: &str) -> Result<ClientState, String> {
+        let client_opt = Client::new(DEFAULT_PORT);
+
+        if let Ok(client) = client_opt {
+            if let Ok(()) = client.connect(server, name) {
+                let arena = client.try_get_arena().unwrap();
+                let mapmesh = ClientState::build_mapmesh(&arena, ctx, atlas).unwrap();
+                let inputmask = InputMask::new();
+                return Ok(ClientState {client, mapmesh, inputmask});
+            }
+        }
+
+        Err("Failed to create new client".to_string())
     }
 
     /// TODO: Use player sprite rather than just a rectangle.

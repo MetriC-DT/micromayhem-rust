@@ -2,7 +2,6 @@ use crossbeam_channel::{Sender, Receiver, TrySendError};
 use game::arena::Arena;
 use game::input::InputMask;
 use laminar::{Socket, Packet, SocketEvent};
-use laminar::ErrorKind;
 use std::{net::SocketAddr, thread::{self, JoinHandle}, collections::HashMap, time::Duration, io};
 
 use crate::message::{Message, HeaderByte};
@@ -13,6 +12,7 @@ use crate::message::{Message, HeaderByte};
 ///
 /// TODO: enable some form of packet verification and other configurations
 /// with the config options for laminar.
+#[derive(Debug)]
 pub struct Client {
     sender: Sender<Packet>,
     receiver: Receiver<SocketEvent>,
@@ -24,7 +24,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(port: u16) -> Result<Self, ErrorKind> {
+    pub fn new(port: u16) -> Result<Self, laminar::ErrorKind> {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
         let mut socket = Socket::bind(addr)?;
         let (sender, receiver) = (socket.get_packet_sender(), socket.get_event_receiver());
@@ -61,11 +61,14 @@ impl Client {
         else {
             Err(io::ErrorKind::BrokenPipe.into())
         }
-
     }
 
     /// connects to a valid address.
-    fn add_remote(remotes: &mut HashMap<SocketAddr, u8>, addr: &SocketAddr, max_remotes: u8, id: u8) {
+    fn add_remote(remotes: &mut HashMap<SocketAddr, u8>,
+                  addr: &SocketAddr,
+                  max_remotes: u8,
+                  id: u8) {
+
         if remotes.len() < max_remotes.into() {
             remotes.insert(*addr, id);
         }
@@ -88,6 +91,14 @@ impl Client {
             Client::send_to(&self.sender, remote, &message)?;
         }
         Ok(())
+    }
+
+    pub fn try_get_arena(&self) -> &Option<Arena> {
+        &self.arena
+    }
+
+    pub fn try_get_id(&self) -> &Option<u8> {
+        &self.id
     }
 
     /// sends the data to a remote socket.
@@ -133,7 +144,7 @@ impl Client {
 
     /// Receives a `Packet` and then only returns the data of the packet if it is
     /// more recent than the previous one.
-    fn receive(&mut self) {
+    pub fn receive(&mut self) {
         for event in self.receiver.try_iter() {
             match event {
                 SocketEvent::Packet(packet) => {

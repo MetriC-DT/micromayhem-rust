@@ -11,12 +11,13 @@ use crate::message::{Message, HeaderByte};
 ///
 /// TODO: enable some form of packet verification and other configurations
 /// with the config options for laminar.
+#[derive(Debug)]
 pub struct Server {
     sender: Sender<Packet>,
     receiver: Receiver<SocketEvent>,
     remotes: HashMap<SocketAddr, u8>,
     max_remotes: u8,
-    arena: Option<Arena>,
+    arena: Arena,
     _poll_thread: JoinHandle<()>
 }
 
@@ -27,7 +28,7 @@ impl Server {
         let (sender, receiver) = (socket.get_packet_sender(), socket.get_event_receiver());
         let remotes = HashMap::new();
         let _poll_thread = thread::spawn(move || socket.start_polling());
-        let arena = Some(Arena::default());
+        let arena = Arena::default();
 
         Ok(Self {sender, receiver, max_remotes, remotes, arena, _poll_thread})
     }
@@ -42,10 +43,10 @@ impl Server {
     /// removes the given socket from the remotes list and the arena.
     fn remove_remote(remotes: &mut HashMap<SocketAddr, u8>,
                      remote: &SocketAddr,
-                     arena_opt: &mut Option<Arena>) {
+                     arena: &mut Arena) {
 
         let player_id = remotes.remove(remote);
-        if let (Some(arena), Some(id)) = (arena_opt, player_id) {
+        if let Some(id) = player_id {
             arena.remove_player(id);
         }
     }
@@ -71,7 +72,7 @@ impl Server {
 
     /// function to call when the client receives a packet.
     fn on_packet_recv(sender: &Sender<Packet>,
-                      arena_opt: &mut Option<Arena>,
+                      arena: &mut Arena,
                       remotes: &mut HashMap<SocketAddr, u8>,
                       max_remotes: u8,
                       packet: Packet) {
@@ -84,11 +85,9 @@ impl Server {
             match message.header {
                 HeaderByte::Connect => {
                     // adds player into arena, and adds player into connected remotes.
-                    if let Some(arena) = arena_opt {
-                        let id = arena.add_player(message.read_connect());
-                        Server::send_to(sender, &addr, &Message::write_verify(id)).unwrap();
-                        Server::add_remote(remotes, &addr, max_remotes, id);
-                    }
+                    let id = arena.add_player(message.read_connect());
+                    Server::send_to(sender, &addr, &Message::write_verify(id)).unwrap();
+                    Server::add_remote(remotes, &addr, max_remotes, id);
                 },
 
                 HeaderByte::Request => {
@@ -103,7 +102,7 @@ impl Server {
                 HeaderByte::Disconnect => {
                     // removes the remote from the connected remotes.
                     // also, removes player from arena if possible.
-                    Server::remove_remote(remotes, &addr, arena_opt);
+                    Server::remove_remote(remotes, &addr, arena);
                 },
 
                 _ => {unimplemented!()},
@@ -135,5 +134,9 @@ impl Server {
                 _ => {},
             }
         }
+    }
+
+    pub(crate) fn get_arena(&self) -> &Arena {
+        &self.arena
     }
 }
