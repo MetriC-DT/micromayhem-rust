@@ -44,10 +44,15 @@ impl Message {
         v
     }
 
-    pub(crate) fn read_connect(&self) -> Player {
-        let namebytes: Vec<u8> = self.data.clone().into_iter().collect();
+    pub(crate) fn read_connect(self) -> Player {
+        let namebytes: Vec<u8> = self.data.into_iter().collect();
         let name = String::from_utf8_lossy(&namebytes);
         Player::new(&name)
+    }
+
+    pub(crate) fn read_verify(self) -> u8 {
+        let mut bytes = self.data.into_iter();
+        bytes.next().unwrap()
     }
 
     pub(crate) fn read_input(&self) -> InputMask {
@@ -67,10 +72,10 @@ impl Message {
         }
     }
 
-    pub(crate) fn write_verify() -> Message {
+    pub(crate) fn write_verify(id: u8) -> Message {
         Message {
             header: HeaderByte::Verify,
-            data: Vec::new()
+            data: vec![id],
         }
     }
 
@@ -81,7 +86,7 @@ impl Message {
         }
     }
 
-    pub(crate) fn write_input(&self, input: InputMask) -> Message {
+    pub(crate) fn write_input(input: InputMask) -> Message {
         Message {
             header: HeaderByte::Input,
             data: vec![input.into()]

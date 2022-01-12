@@ -1,2 +1,2 @@
-mod test_client_unit;
-mod test_message_unit;
+mod test_client;
+mod test_message;
