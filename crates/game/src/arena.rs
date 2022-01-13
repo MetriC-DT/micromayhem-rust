@@ -73,7 +73,7 @@ impl Arena {
         self.players.get(&id).expect("No player with given id")
     }
 
-    pub fn get_players_iter(&self) -> impl Iterator<Item=(&u8, &Player)> + '_ {
+    pub fn get_players_iter(&self) -> impl Iterator<Item=(&u8, &Player)> {
         self.players.iter()
     }
 
@@ -151,8 +151,8 @@ impl Arena {
     /// the `inputs` variable represents the vector of inputs that the arena has received from the
     /// players (probably through network). It MUST have the same size as the players array and
     /// also have the indices of the input match the indices of the players that inputted them.
-    pub fn update(&mut self, dt: f32, ids: &Vec<u8>, inputs: &Vec<InputMask>) {
-        for (id, input) in ids.iter().zip(inputs) {
+    pub fn update<'a>(&mut self, dt: f32, inputs_iter: impl Iterator<Item=(&'a u8, &'a InputMask)>) {
+        for (id, input) in inputs_iter {
             self.update_player(dt, *id, *input);
         }
 
@@ -181,129 +181,133 @@ impl Arena {
 
     /// updates the players in the arena based on their respective inputs.
     fn update_player(&mut self, dt: f32, id: u8, input: InputMask) {
-        let player = self.players.get_mut(&id).unwrap();
+        let p = self.players.get_mut(&id);
 
-        // total mass obtains mass of player + weapon.
-        let total_mass = player.get_total_mass();
-        let player_bottom = player.position + Vec2::new(0.0, player.height);
-        let left_grid_position = Arena::to_row_col(player_bottom);
-        let right_grid_position = Arena::to_row_col(player_bottom + Vec2::new(player.width, 0.0));
+        if let Some(player) = p {
+            // total mass obtains mass of player + weapon.
+            let total_mass = player.get_total_mass();
+            let player_bottom = player.position + Vec2::new(0.0, player.height);
+            let left_grid_position = Arena::to_row_col(player_bottom);
+            let right_grid_position = Arena::to_row_col(player_bottom + Vec2::new(player.width, 0.0));
 
-        // TODO: calculates the acceleration experienced by the player, with all variables and
-        // inputs accounted for.
-        //
-        // Considers forces from:
-        // weight + gun recoil + block friction + block normal + bullet hit + WASD inputs.
-        let weight = GRAVITY_DEFAULT * total_mass;
-        let mut lowest_block_y: f32 = ARENA_HEIGHT + player.height;
-        let mut block_friction = Vec2::ZERO;
-        let mut run_friction = Vec2::new(AIR_FRICTION, 0.0);
-        let mut block_normal = Vec2::ZERO;
-        let mut gun_recoil = Vec2::ZERO;
-        let mut bullet_hit = Vec2::ZERO;
-        let mut jump = Vec2::ZERO;
-        let mut run: Vec2;
-        let mut drop_input: bool = false;
-        let mut standing_on_block = false;
-        let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
-        let has_right = input.has_mask(Input::Right) as u8 as f32;
-        let direction = has_left + has_right;
-        let has_jump = input.has_mask(Input::Up);
+            // TODO: calculates the acceleration experienced by the player, with all variables and
+            // inputs accounted for.
+            //
+            // Considers forces from:
+            // weight + gun recoil + block friction + block normal + bullet hit + WASD inputs.
+            let weight = GRAVITY_DEFAULT * total_mass;
+            let mut lowest_block_y: f32 = ARENA_HEIGHT + player.height;
+            let mut block_friction = Vec2::ZERO;
+            let mut run_friction = Vec2::new(AIR_FRICTION, 0.0);
+            let mut block_normal = Vec2::ZERO;
+            let mut gun_recoil = Vec2::ZERO;
+            let mut bullet_hit = Vec2::ZERO;
+            let mut jump = Vec2::ZERO;
+            let mut run: Vec2;
+            let mut drop_input: bool = false;
+            let mut standing_on_block = false;
+            let has_left = input.has_mask(Input::Left) as u8 as f32 * -1.0;
+            let has_right = input.has_mask(Input::Right) as u8 as f32;
+            let direction = has_left + has_right;
+            let has_jump = input.has_mask(Input::Up);
 
-        let first_rowcol_below_opt = Arena::find_first_rowcol_below(&self.map, &left_grid_position, &right_grid_position);
+            let first_rowcol_below_opt = Arena::find_first_rowcol_below(&self.map, &left_grid_position, &right_grid_position);
 
-        if let Some((row, col)) = first_rowcol_below_opt {
-            // we are standing on block if y position is lowest and player is falling.
-            lowest_block_y = Arena::get_block_row_position(row);
-            standing_on_block = player_bottom.y == lowest_block_y && player.velocity.y <= 0.0;
+            if let Some((row, col)) = first_rowcol_below_opt {
+                // we are standing on block if y position is lowest and player is falling.
+                lowest_block_y = Arena::get_block_row_position(row);
+                standing_on_block = player_bottom.y == lowest_block_y && player.velocity.y <= 0.0;
 
-            if standing_on_block {
-                // sets player's velocity y component to zero.
-                player.velocity.y = 0.0;
+                if standing_on_block {
+                    // sets player's velocity y component to zero.
+                    player.velocity.y = 0.0;
 
-                // obtains the normal force
-                block_normal = -weight;
+                    // obtains the normal force
+                    block_normal = -weight;
 
-                // obtains the frictional force, and point its direction to opposite velocity.
-                let xvel = player.velocity.x;
-                let fric_direction: f32 = -normalize_float(xvel);
+                    // obtains the frictional force, and point its direction to opposite velocity.
+                    let xvel = player.velocity.x;
+                    let fric_direction: f32 = -normalize_float(xvel);
 
-                // if player's velocity is normalized to be 0, then we can directly set it to
-                // prevent floating point rounding errors.
-                player.velocity.x *= fric_direction.abs();
+                    // if player's velocity is normalized to be 0, then we can directly set it to
+                    // prevent floating point rounding errors.
+                    player.velocity.x *= fric_direction.abs();
 
-                // we are already on a block, so the blocktype should not be None
-                let blocktype = self.blocks[col * VERTICAL_BLOCKS + row].expect("BlockType should not be None");
+                    // we are already on a block, so the blocktype should not be None
+                    let blocktype = self.blocks[col * VERTICAL_BLOCKS + row].expect("BlockType should not be None");
 
 
-                let coeff_friction = block::get_block_friction(blocktype);
-                let block_normal_magnitude = block_normal.y.abs();
+                    let coeff_friction = block::get_block_friction(blocktype);
+                    let block_normal_magnitude = block_normal.y.abs();
 
-                // minimizes so we do not overshoot (compares the force to reduce the player's
-                // speed down to zero against the frictional force, and chooses the minimum)
-                let max_allowed_friction_magnitude = xvel.abs() * total_mass / dt;
-                let block_friction_magnitude = f32::min(coeff_friction * block_normal_magnitude, max_allowed_friction_magnitude);
-                block_friction = fric_direction * block_friction_magnitude * Vec2::X;
+                    // minimizes so we do not overshoot (compares the force to reduce the player's
+                    // speed down to zero against the frictional force, and chooses the minimum)
+                    let max_allowed_friction_magnitude = xvel.abs() * total_mass / dt;
+                    let block_friction_magnitude = f32::min(coeff_friction * block_normal_magnitude, max_allowed_friction_magnitude);
+                    block_friction = fric_direction * block_friction_magnitude * Vec2::X;
 
-                // we update run_friction: the force to get the player moving.
-                // This is only relevant to when player inputs their left/right movement commands.
-                run_friction = coeff_friction * block_normal_magnitude * Vec2::X;
+                    // we update run_friction: the force to get the player moving.
+                    // This is only relevant to when player inputs their left/right movement commands.
+                    run_friction = coeff_friction * block_normal_magnitude * Vec2::X;
 
-                // can only drop down if we are standing on block, and not on the lowest platform.
-                drop_input = input.has_mask(Input::Down) && row != VERTICAL_BLOCKS - 1;
+                    // can only drop down if we are standing on block, and not on the lowest platform.
+                    drop_input = input.has_mask(Input::Down) && row != VERTICAL_BLOCKS - 1;
+                }
             }
-        }
 
-        // removes one jump if not touching ground. Else resets the player's jump count.
-        if !standing_on_block {
-            player.jumps_left = u8::min(player.jumps_count - 1, player.jumps_left);
+            // removes one jump if not touching ground. Else resets the player's jump count.
+            if !standing_on_block {
+                player.jumps_left = u8::min(player.jumps_count - 1, player.jumps_left);
+            } else {
+                player.jumps_left = player.jumps_count;
+            }
+
+            // accelerations from player inputs
+            // player's jump inputs
+            if has_jump {
+                jump = player.jump_force_and_decrement();
+            }
+
+            // Disallows any acceleration input that is in the same direction as the player's
+            // velocity if the player's velocity is already above its speed_cap.
+            //
+            // README: A better solution might employ correcting the run force by calculating its difference
+            // against the maximum allowed acceleration to reach the speed cap rather than just zeroing
+            // out the run input. This would probably result in a more "consistent" usage of the
+            // speed_cap.
+            let multiplier = 2.0;
+            run = multiplier * run_friction * direction;
+            if (run.x * player.velocity.x > 0.0) && (player.velocity.x.abs() >= player.speed_cap) {
+                run = Vec2::ZERO;
+            }
+
+            // gets player shooting bullet recoil.
+            // Since the recoil should punish a player less than a knockback, the force exerted by
+            // recoil will be a fraction of the impulse over time rather than the entire dp/dt.
+            if input.has_mask(Input::Shoot) {
+                let attack_status =  player.attack();
+
+                if attack_status == WeaponStatus::FireSuccess {
+                    gun_recoil = -player.get_bullet_momentum() / dt;
+
+                    // create a bullet at the player's position, velocity and direction.
+                    let bullet = player.create_new_bullet(self.bulletcount);
+                    self.bullets.insert(bullet.get_id(), bullet);
+                    self.bulletcount = self.bulletcount.wrapping_add(1);
+                }
+
+                else if attack_status == WeaponStatus::Empty {
+                    // TODO: sets the recoil correctly when player throws the weapon.
+                    gun_recoil = Vec2::ZERO;
+                }
+            }
+
+            // updates the player after calculating all the applied forces above.
+            let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
+            player.update(dt, lowest_block_y, total_force, drop_input, direction);
         } else {
-            player.jumps_left = player.jumps_count;
+            println!("PLAYER {} DOES NOT EXIST. CANNOT BE UPDATED", id);
         }
-
-        // accelerations from player inputs
-        // player's jump inputs
-        if has_jump {
-            jump = player.jump_force_and_decrement();
-        }
-
-        // Disallows any acceleration input that is in the same direction as the player's
-        // velocity if the player's velocity is already above its speed_cap.
-        //
-        // README: A better solution might employ correcting the run force by calculating its difference
-        // against the maximum allowed acceleration to reach the speed cap rather than just zeroing
-        // out the run input. This would probably result in a more "consistent" usage of the
-        // speed_cap.
-        let multiplier = 2.0;
-        run = multiplier * run_friction * direction;
-        if (run.x * player.velocity.x > 0.0) && (player.velocity.x.abs() >= player.speed_cap) {
-            run = Vec2::ZERO;
-        }
-
-        // gets player shooting bullet recoil.
-        // Since the recoil should punish a player less than a knockback, the force exerted by
-        // recoil will be a fraction of the impulse over time rather than the entire dp/dt.
-        if input.has_mask(Input::Shoot) {
-            let attack_status =  player.attack();
-
-            if attack_status == WeaponStatus::FireSuccess {
-                gun_recoil = -player.get_bullet_momentum() / dt;
-
-                // create a bullet at the player's position, velocity and direction.
-                let bullet = player.create_new_bullet(self.bulletcount);
-                self.bullets.insert(bullet.get_id(), bullet);
-                self.bulletcount = self.bulletcount.wrapping_add(1);
-            }
-
-            else if attack_status == WeaponStatus::Empty {
-                // TODO: sets the recoil correctly when player throws the weapon.
-                gun_recoil = Vec2::ZERO;
-            }
-        }
-
-        // updates the player after calculating all the applied forces above.
-        let total_force = weight + gun_recoil + block_friction + block_normal + bullet_hit + jump + run;
-        player.update(dt, lowest_block_y, total_force, drop_input, direction);
     }
 
 

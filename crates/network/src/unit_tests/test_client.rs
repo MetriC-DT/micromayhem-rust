@@ -11,6 +11,9 @@ fn client_connect() {
         // sends connect request
         c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT-2)), "test").unwrap();
         sleep(Duration::from_millis(50));
+        c1.receive();
+        sleep(Duration::from_millis(50));
+        c1.receive();
         assert!(c1.try_get_remote().is_some());
     });
 
@@ -36,7 +39,8 @@ fn client_verification() {
         // sends connect request
         c1.connect(&SocketAddr::from(([0,0,0,0], server_port)), "test").unwrap();
         sleep(Duration::from_millis(50));
-
+        c1.receive();
+        sleep(Duration::from_millis(50));
         c1.receive();
         assert!(c1.try_get_id().is_some());
         assert_eq!(c1.try_get_id().unwrap(), 0);

@@ -1,4 +1,6 @@
 use std::net::SocketAddr;
+use std::thread;
+use std::time::Duration;
 
 use game::player::Player;
 use game::arena::Arena;
@@ -10,7 +12,6 @@ use ggez::{event::EventHandler, GameResult, timer, graphics};
 use ggez::graphics::{Color, Mesh, DrawMode, DrawParam};
 use glam::Vec2;
 use gui::spriteloader::Atlas;
-use network::DEFAULT_PORT;
 use network::client::Client;
 use network::message::Message;
 use crate::{BACKGROUND_COLOR, TICK_RATE};
@@ -28,8 +29,17 @@ pub struct ClientState {
 
 impl ClientState {
     pub fn new(ctx: &mut Context, atlas: &Atlas, server: &SocketAddr, name: &str) -> Result<ClientState> {
-        let mut client = Client::new(DEFAULT_PORT)?;
+        let mut client = Client::new(0)?;
         client.connect(server, name)?;
+
+        // keep trying to receive, until timeout.
+        let mut tries = 10;
+        while *client.try_get_id() == None && tries > 0 {
+            client.receive();
+            tries -= 1;
+            thread::sleep(Duration::from_secs_f32(0.5));
+        }
+
         let arena = client.try_get_arena().expect("Unable to get arena");
         let mapmesh = ClientState::build_mapmesh(&arena, ctx, atlas).unwrap();
         let inputmask = InputMask::new();

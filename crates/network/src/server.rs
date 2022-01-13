@@ -1,5 +1,5 @@
-use crossbeam_channel::{Sender, Receiver};
-use game::arena::Arena;
+use crossbeam::channel::{Sender, Receiver};
+use game::{arena::Arena, input::InputMask};
 use laminar::{Socket, Packet, SocketEvent};
 use std::{net::SocketAddr, thread::{self, JoinHandle}, collections::HashMap, io::{self, ErrorKind}};
 use crate::message::{Message, HeaderByte};
@@ -15,6 +15,7 @@ pub struct Server {
     sender: Sender<Packet>,
     receiver: Receiver<SocketEvent>,
     remotes: HashMap<SocketAddr, u8>,
+    inputs: HashMap<u8, InputMask>,
     max_remotes: u8,
     arena: Arena,
     next_id: u8,
@@ -29,11 +30,12 @@ impl Server {
             Ok(mut socket) => {
                 let (sender, receiver) = (socket.get_packet_sender(), socket.get_event_receiver());
                 let remotes = HashMap::new();
+                let inputs = HashMap::new();
                 let _poll_thread = thread::spawn(move || socket.start_polling());
                 let arena = Arena::default();
                 let next_id = 0;
 
-                Ok(Self {sender, receiver, max_remotes, remotes, arena, next_id, _poll_thread})
+                Ok(Self {sender, receiver, max_remotes, remotes, inputs, arena, next_id, _poll_thread})
             },
 
             Err(e) => {Err(io::Error::new(ErrorKind::Other, e))}
@@ -60,6 +62,7 @@ impl Server {
                      remote: &SocketAddr,
                      arena: &mut Arena) {
 
+        println!("Removing {}", remote);
         let player_id = remotes.remove(remote);
         if let Some(id) = player_id {
             arena.remove_player(id);
@@ -92,6 +95,7 @@ impl Server {
     fn on_packet_recv(sender: &Sender<Packet>,
                       arena: &mut Arena,
                       remotes: &mut HashMap<SocketAddr, u8>,
+                      inputs: &mut HashMap<u8, InputMask>,
                       max_remotes: u8,
                       packet: Packet,
                       next_id: &mut u8) {
@@ -121,7 +125,12 @@ impl Server {
                 HeaderByte::Input => {
                     // uses the received input to update the arena.
                     let inputmask = message.read_input();
-                    println!("{}", inputmask);
+                    let id_option = remotes.get(&addr);
+
+                    if let Some(id) = id_option {
+                        inputs.insert(*id, inputmask);
+                        println!("Received {} from {}", inputmask, *id);
+                    }
                 },
 
                 HeaderByte::Disconnect => {
@@ -130,20 +139,21 @@ impl Server {
                     Server::remove_remote(remotes, &addr, arena);
                 },
 
-                _ => {unimplemented!()},
+                _ => println!("Unknown packet received")
             }
         }
     }
 
     /// Receives a `Packet` and then only returns the data of the packet if it is
     /// more recent than the previous one.
-    pub fn receive(&mut self) {
+    pub(crate) fn receive(&mut self) {
         for event in self.receiver.try_iter() {
             match event {
                 SocketEvent::Packet(packet) => {
                     Server::on_packet_recv(&self.sender,
                                            &mut self.arena,
                                            &mut self.remotes,
+                                           &mut self.inputs,
                                            self.max_remotes,
                                            packet,
                                            &mut self.next_id);
@@ -153,16 +163,16 @@ impl Server {
                     Server::remove_remote(&mut self.remotes, &addr, &mut self.arena);
                 },
 
-                SocketEvent::Disconnect(addr) => {
-                    Server::remove_remote(&mut self.remotes, &addr, &mut self.arena);
-                },
-
-                _ => { unimplemented!() },
+                _ => {},
             }
         }
     }
 
-    pub(crate) fn get_arena(&self) -> &Arena {
-        &self.arena
+    /// updates the server arena.
+    pub fn update(&mut self, dt: f32) {
+        self.inputs.clear();
+        self.receive();
+        let player_inputs_iter = self.inputs.iter();
+        self.arena.update(dt, player_inputs_iter);
     }
 }

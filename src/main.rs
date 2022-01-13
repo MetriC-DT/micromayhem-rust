@@ -1,8 +1,10 @@
 use micromayhem::clientstate::ClientState;
+use micromayhem::serverstate::ServerState;
+use network::DEFAULT_PORT;
+use network::server::Server;
 use std::net::ToSocketAddrs;
 use std::{env, io};
 use std::path::{Path, self, PathBuf};
-use game::arena::Arena;
 use ggez::{GameResult, ContextBuilder, event};
 
 use gui::spriteloader::Atlas;
@@ -21,7 +23,11 @@ fn main() -> GameResult {
 
 /// runs the server side of the game, which only handles physics and player interaction.
 fn run_server() {
-    let a = Arena::default();
+    let server = Server::new(DEFAULT_PORT, 4).expect("Cannot create server");
+    let mut serverstate = ServerState::new(server);
+
+    println!("Starting server on port {}", DEFAULT_PORT);
+    serverstate.run();
 }
 
 /// runs the client side of the game (which handles drawing graphics on user's screen).
