@@ -1,7 +1,7 @@
-use crossbeam_channel::{Sender, Receiver, TrySendError};
+use crossbeam_channel::{Sender, Receiver};
 use game::arena::Arena;
 use laminar::{Socket, Packet, SocketEvent};
-use std::{net::SocketAddr, thread::{self, JoinHandle}, time::Duration, io};
+use std::{net::SocketAddr, thread::{self, JoinHandle}, time::Duration, io::{self, Result, ErrorKind}};
 
 use crate::message::{Message, HeaderByte};
 
@@ -22,16 +22,21 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(port: u16) -> Result<Self, laminar::ErrorKind> {
+    pub fn new(port: u16) -> Result<Self> {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
-        let mut socket = Socket::bind(addr)?;
-        let (sender, receiver) = (socket.get_packet_sender(), socket.get_event_receiver());
-        let remote = None;
-        let _poll_thread = thread::spawn(move || socket.start_polling());
-        let arena = None;
-        let id = None;
+        match Socket::bind(addr) {
+            Ok(mut socket) => {
+                let (sender, receiver) = (socket.get_packet_sender(), socket.get_event_receiver());
+                let remote = None;
+                let _poll_thread = thread::spawn(move || socket.start_polling());
+                let arena = None;
+                let id = None;
 
-        Ok(Self {sender, receiver, remote, arena, id, _poll_thread})
+                Ok(Self {sender, receiver, remote, arena, id, _poll_thread})
+            },
+
+            Err(e) => Err(io::Error::new(ErrorKind::Other, e)),
+        }
     }
 
     /// Client-only call.
@@ -39,13 +44,15 @@ impl Client {
     /// returns io::Error::TimedOut if the server does not respond,
     /// returns io::Error::InvalidData if the server sends corrupted data.
     /// returns io::Error::BrokenPipe if the client cannot send info to server.
-    pub fn connect(&mut self, remote: &SocketAddr, name: &str) -> Result<(), io::Error> {
+    pub fn connect(&mut self, remote: &SocketAddr, name: &str) -> Result<()> {
         let message = Message::write_connect(name);
-        if let Ok(()) = Client::send_to(&self.sender, remote, &message) {
+        Client::send_to(&self.sender, remote, &message)?;
 
-            // timeout for server to send the validation packet.
-            let validation = self.receiver.recv_timeout(Duration::from_secs(5));
-            if let Ok(SocketEvent::Packet(packet)) = validation {
+        // timeout for server to send the validation packet.
+        let validation = self.receiver.recv_timeout(Duration::from_secs(5));
+
+        match validation {
+            Ok(SocketEvent::Packet(packet)) => {
                 Client::set_remote(&mut self.remote, remote);
                 let m = Message::try_from(packet.payload().to_vec())?;
 
@@ -53,13 +60,9 @@ impl Client {
                 self.id = Some(id);
                 self.arena = Some(Arena::new(map));
                 Ok(())
-            } else {
-                Err(io::ErrorKind::TimedOut.into())
-            }
-
-        }
-        else {
-            Err(io::ErrorKind::BrokenPipe.into())
+            },
+            Err(e) => Err(io::Error::new(ErrorKind::TimedOut, e)),
+            Ok(_) => unimplemented!(),
         }
     }
 
@@ -78,21 +81,23 @@ impl Client {
         *remote = None;
     }
 
-    pub(crate) fn get_remote(&self) -> &Option<SocketAddr> {
+    pub(crate) fn try_get_remote(&self) -> &Option<SocketAddr> {
         &self.remote
     }
 
     /// sends the data contained in a packet to a server.
     /// Also increments the sequence counter for the client, which may result in overflowing.
-    pub fn send_message(&self, message: &Message) -> Result<(), io::Error> {
+    pub fn send_message(&self, message: &Message) -> Result<()> {
         if let Some(remote) = self.remote {
             Client::send_to(&self.sender, &remote, &message)?;
+            Ok(())
+        } else {
+            Err(io::Error::new(ErrorKind::NotFound, "Remote not initialized"))
         }
-        Ok(())
     }
 
-    pub fn try_get_arena(&self) -> &Option<Arena> {
-        &self.arena
+    pub fn try_get_arena(&self) -> Option<&Arena> {
+        self.arena.as_ref()
     }
 
     pub fn try_get_id(&self) -> &Option<u8> {
@@ -102,13 +107,12 @@ impl Client {
     /// sends the data to a remote socket.
     fn send_to(sender: &Sender<Packet>,
                remote: &SocketAddr,
-               message: &Message) -> Result<(), io::Error> {
+               message: &Message) -> Result<()> {
 
         let packet = Packet::reliable_sequenced(*remote, message.to_vec(), None);
         match sender.try_send(packet) {
             Ok(_) => Ok(()),
-            Err(TrySendError::Disconnected(_)) => Err(io::ErrorKind::NotConnected.into()),
-            Err(TrySendError::Full(_)) => Err(io::ErrorKind::Other.into()),
+            Err(e) => Err(io::Error::new(ErrorKind::Other, e))
         }
     }
 

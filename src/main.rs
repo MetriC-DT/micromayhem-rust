@@ -1,5 +1,5 @@
 use micromayhem::clientstate::ClientState;
-use std::io::Write;
+use std::net::ToSocketAddrs;
 use std::{env, io};
 use std::path::{Path, self, PathBuf};
 use game::arena::Arena;
@@ -27,11 +27,18 @@ fn run_server() {
 /// runs the client side of the game (which handles drawing graphics on user's screen).
 fn run_client() -> GameResult {
     // stopgap measure to allow user to connect to an online server.
-    print!("Enter a server to connect to: ");
-    io::stdout().flush()?;
+    println!("Enter a server to connect to below:");
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
-    let address = buffer.trim();
+    let address = buffer.trim().to_socket_addrs()
+        .expect("Unable to convert to a valid address")
+        .next()
+        .expect("No valid address found") ;
+
+    println!("Enter your character name below:");
+    let mut name = String::new();
+    io::stdin().read_line(&mut name)?;
+    name = name.trim().to_string();
 
     // loads atlas
     let resource_dir = load_resources();
@@ -43,7 +50,8 @@ fn run_client() -> GameResult {
     cb = cb.add_resource_path(resource_dir);
 
     let (mut ctx, event_loop) = cb.build()?;
-    let mut g = ClientState::new(Arena::default(), &mut ctx, &atlas);
+    let g = ClientState::new(&mut ctx, &atlas, &address, &name)
+        .expect("Unable to create new client state");
 
     event::run(ctx, event_loop, g);
 }

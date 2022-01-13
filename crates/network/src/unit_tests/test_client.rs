@@ -11,7 +11,7 @@ fn client_connect() {
         // sends connect request
         c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT-2)), "test").unwrap();
         sleep(Duration::from_millis(50));
-        assert!(c1.get_remote().is_some());
+        assert!(c1.try_get_remote().is_some());
     });
 
     sleep(Duration::from_millis(50));

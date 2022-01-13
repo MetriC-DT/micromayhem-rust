@@ -16,4 +16,5 @@ pub const MAPS_DIR: &str = "maps";
 pub const FONTS_DIR: &str = "fonts";
 pub const BACKGROUND_COLOR: u32 = 0x4d6a77;
 
-pub const TICK_RATE: u8 = 60;
+pub const TICK_RATE: u32 = 60;
+pub const DELTA_T: f32 = 1.0 / TICK_RATE as f32;

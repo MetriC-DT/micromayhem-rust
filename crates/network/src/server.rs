@@ -137,7 +137,7 @@ impl Server {
 
     /// Receives a `Packet` and then only returns the data of the packet if it is
     /// more recent than the previous one.
-    pub(crate) fn receive(&mut self) {
+    pub fn receive(&mut self) {
         for event in self.receiver.try_iter() {
             match event {
                 SocketEvent::Packet(packet) => {

@@ -69,6 +69,14 @@ impl Arena {
         self.players.remove(&id);
     }
 
+    pub fn get_player(&self, id: u8) -> &Player {
+        self.players.get(&id).expect("No player with given id")
+    }
+
+    pub fn get_players_iter(&self) -> impl Iterator<Item=(&u8, &Player)> + '_ {
+        self.players.iter()
+    }
+
     /// obtains the position of the row as f32.
     fn get_block_row_position(row: usize) -> f32 {
         VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * row as f32

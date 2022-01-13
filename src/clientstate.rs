@@ -12,12 +12,10 @@ use glam::Vec2;
 use gui::spriteloader::Atlas;
 use network::DEFAULT_PORT;
 use network::client::Client;
-use crate::BACKGROUND_COLOR;
+use network::message::Message;
+use crate::{BACKGROUND_COLOR, TICK_RATE};
 use crate::viewport::Viewport;
-
-// the ticks per second for the physics simulation.
-const DESIRED_FPS: u32 = 60;
-const DT: f32 = 1.0 / DESIRED_FPS as f32;
+use std::io::Result;
 
 #[derive(Debug)]
 pub struct ClientState {
@@ -29,19 +27,13 @@ pub struct ClientState {
 
 
 impl ClientState {
-    pub fn new(ctx: &mut Context, atlas: &Atlas, server: &SocketAddr, name: &str) -> Result<ClientState, String> {
-        let client_opt = Client::new(DEFAULT_PORT);
-
-        if let Ok(client) = client_opt {
-            if let Ok(()) = client.connect(server, name) {
-                let arena = client.try_get_arena().unwrap();
-                let mapmesh = ClientState::build_mapmesh(&arena, ctx, atlas).unwrap();
-                let inputmask = InputMask::new();
-                return Ok(ClientState {client, mapmesh, inputmask});
-            }
-        }
-
-        Err("Failed to create new client".to_string())
+    pub fn new(ctx: &mut Context, atlas: &Atlas, server: &SocketAddr, name: &str) -> Result<ClientState> {
+        let mut client = Client::new(DEFAULT_PORT)?;
+        client.connect(server, name)?;
+        let arena = client.try_get_arena().expect("Unable to get arena");
+        let mapmesh = ClientState::build_mapmesh(&arena, ctx, atlas).unwrap();
+        let inputmask = InputMask::new();
+        return Ok(ClientState {client, mapmesh, inputmask});
     }
 
     /// TODO: Use player sprite rather than just a rectangle.
@@ -82,8 +74,13 @@ impl EventHandler for ClientState {
         // Rely on ggez's built-in timer for deciding when to update the game, and how many times.
         // If the update is early, there will be no cycles, otherwises, the logic will run once for each
         // frame fitting in the time since the last update.
-        while timer::check_update_time(ctx, DESIRED_FPS) {
-            self.arena.update(DT, &self.inputmask);
+        while timer::check_update_time(ctx, TICK_RATE) {
+            // sends input
+            let input_message = Message::write_input(self.inputmask);
+            self.client.send_message(&input_message).unwrap();
+
+            // obtains updated arena.
+            self.client.receive();
         }
 
         Ok(())
@@ -93,10 +90,12 @@ impl EventHandler for ClientState {
         // color background
         graphics::clear(ctx, Color::from_rgb_u32(BACKGROUND_COLOR));
 
+        let arena = self.client.try_get_arena().expect("Cannot draw arena");
+        let id = self.client.try_get_id().expect("No player ID assigned");
+
         // gets new viewport to find where to position the camera.
-        //
         // TODO: obtain the correct player (not just the first one).
-        let player = self.arena.get_players_iter().nth(0).unwrap();
+        let player = arena.get_player(id);
         let viewport: Viewport = Viewport::get_viewport_on_player(player, ctx);
         let offset = viewport.get_offset();
 
@@ -105,12 +104,12 @@ impl EventHandler for ClientState {
 
         ClientState::draw_player(ctx, player, offset, Color::WHITE)?;
 
-        for p in self.arena.get_players_iter() {
+        for (_, p) in arena.get_players_iter() {
             ClientState::draw_player(ctx, p, offset, Color::GREEN)?;
         }
 
         // draws bullets
-        for (_, bullet) in self.arena.bullets_iterator() {
+        for (_, bullet) in arena.bullets_iterator() {
             let [x, y] = bullet.get_position().to_array();
             let w = 9.0;
             let h = 9.0;

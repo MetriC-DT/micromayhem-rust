@@ -108,7 +108,7 @@ impl Message {
         }
     }
 
-    pub(crate) fn write_input(input: InputMask) -> Message {
+    pub fn write_input(input: InputMask) -> Message {
         Message {
             header: HeaderByte::Input,
             data: vec![input.into()]
