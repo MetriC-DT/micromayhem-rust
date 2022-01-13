@@ -1,7 +1,7 @@
 use crossbeam::channel::{Sender, Receiver};
 use game::{arena::Arena, input::InputMask};
 use laminar::{Socket, Packet, SocketEvent};
-use std::{net::SocketAddr, thread::{self, JoinHandle}, collections::HashMap, io::{self, ErrorKind}};
+use std::{net::SocketAddr, thread::{self, JoinHandle}, collections::HashMap, io::{self, ErrorKind}, time::Duration};
 use crate::message::{Message, HeaderByte};
 use std::io::Result;
 
@@ -62,10 +62,10 @@ impl Server {
                      remote: &SocketAddr,
                      arena: &mut Arena) {
 
-        println!("Removing {}", remote);
         let player_id = remotes.remove(remote);
         if let Some(id) = player_id {
             arena.remove_player(id);
+            println!("Removed {}", id);
         }
     }
 
@@ -84,8 +84,8 @@ impl Server {
 
     /// sends the data to a remote socket.
     fn send_to(sender: &Sender<Packet>, remote: &SocketAddr, message: &Message) -> Result<()> {
-        let packet = Packet::reliable_sequenced(*remote, message.to_vec(), None);
-        match sender.try_send(packet) {
+        let packet = Packet::reliable_unordered(*remote, message.to_vec());
+        match sender.send_timeout(packet, Duration::from_millis(50)) {
             Ok(_) => Ok(()),
             Err(e) => Err(io::Error::new(ErrorKind::Other, e)),
         }
