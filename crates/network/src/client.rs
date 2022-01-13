@@ -1,8 +1,7 @@
 use crossbeam_channel::{Sender, Receiver, TrySendError};
 use game::arena::Arena;
-use game::input::InputMask;
 use laminar::{Socket, Packet, SocketEvent};
-use std::{net::SocketAddr, thread::{self, JoinHandle}, collections::HashMap, time::Duration, io};
+use std::{net::SocketAddr, thread::{self, JoinHandle}, time::Duration, io};
 
 use crate::message::{Message, HeaderByte};
 
@@ -16,8 +15,7 @@ use crate::message::{Message, HeaderByte};
 pub struct Client {
     sender: Sender<Packet>,
     receiver: Receiver<SocketEvent>,
-    remotes: HashMap<SocketAddr, u8>,
-    max_remotes: u8,
+    remote: Option<SocketAddr>,
     arena: Option<Arena>,
     id: Option<u8>,
     _poll_thread: JoinHandle<()>,
@@ -28,13 +26,12 @@ impl Client {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
         let mut socket = Socket::bind(addr)?;
         let (sender, receiver) = (socket.get_packet_sender(), socket.get_event_receiver());
-        let max_remotes = 1;
-        let remotes = HashMap::new();
+        let remote = None;
         let _poll_thread = thread::spawn(move || socket.start_polling());
         let arena = None;
         let id = None;
 
-        Ok(Self {sender, receiver, max_remotes, remotes, arena, id, _poll_thread})
+        Ok(Self {sender, receiver, remote, arena, id, _poll_thread})
     }
 
     /// Client-only call.
@@ -49,9 +46,12 @@ impl Client {
             // timeout for server to send the validation packet.
             let validation = self.receiver.recv_timeout(Duration::from_secs(5));
             if let Ok(SocketEvent::Packet(packet)) = validation {
-                Client::add_remote(&mut self.remotes, remote, self.max_remotes, 0);
+                Client::set_remote(&mut self.remote, remote);
                 let m = Message::try_from(packet.payload().to_vec())?;
-                self.id = Some(m.read_verify());
+
+                let (id, map) = m.read_verify();
+                self.id = Some(id);
+                self.arena = Some(Arena::new(map));
                 Ok(())
             } else {
                 Err(io::ErrorKind::TimedOut.into())
@@ -63,32 +63,30 @@ impl Client {
         }
     }
 
-    /// connects to a valid address.
-    fn add_remote(remotes: &mut HashMap<SocketAddr, u8>,
-                  addr: &SocketAddr,
-                  max_remotes: u8,
-                  id: u8) {
-
-        if remotes.len() < max_remotes.into() {
-            remotes.insert(*addr, id);
+    /// connects to a valid address, if we are allowed to.
+    fn set_remote(remote: &mut Option<SocketAddr>, addr: &SocketAddr) -> bool {
+        if let None = remote {
+            *remote = Some(*addr);
+            true
+        } else {
+            false
         }
     }
 
     /// removes the given socket from the remotes list.
-    fn remove_remote(remotes: &mut HashMap<SocketAddr, u8>, remote: &SocketAddr) {
-        remotes.remove(remote);
+    fn remove_remote(remote: &mut Option<SocketAddr>) {
+        *remote = None;
     }
 
-    pub(crate) fn get_remotes(&self) -> &HashMap<SocketAddr, u8> {
-        &self.remotes
+    pub(crate) fn get_remote(&self) -> &Option<SocketAddr> {
+        &self.remote
     }
 
     /// sends the data contained in a packet to a server.
     /// Also increments the sequence counter for the client, which may result in overflowing.
-    pub fn send_message(&self, message: &Message) -> Result<(), TrySendError<Packet>> {
-        // sends the data to every one of the remotes.
-        for (remote, _) in &self.remotes {
-            Client::send_to(&self.sender, remote, &message)?;
+    pub fn send_message(&self, message: &Message) -> Result<(), io::Error> {
+        if let Some(remote) = self.remote {
+            Client::send_to(&self.sender, &remote, &message)?;
         }
         Ok(())
     }
@@ -102,37 +100,25 @@ impl Client {
     }
 
     /// sends the data to a remote socket.
-    fn send_to(sender: &Sender<Packet>, remote: &SocketAddr, message: &Message) -> Result<(), TrySendError<Packet>> {
+    fn send_to(sender: &Sender<Packet>,
+               remote: &SocketAddr,
+               message: &Message) -> Result<(), io::Error> {
+
         let packet = Packet::reliable_sequenced(*remote, message.to_vec(), None);
-        Ok(sender.try_send(packet)?)
+        match sender.try_send(packet) {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Disconnected(_)) => Err(io::ErrorKind::NotConnected.into()),
+            Err(TrySendError::Full(_)) => Err(io::ErrorKind::Other.into()),
+        }
     }
 
     /// function to call when the client receives a packet.
-    fn on_packet_recv(sender: &Sender<Packet>,
-                      arena_opt: &mut Option<Arena>,
-                      remotes: &mut HashMap<SocketAddr, u8>,
-                      max_remotes: u8,
-                      packet: Packet) {
-
+    fn on_packet_recv(arena_opt: &mut Option<Arena>, packet: Packet) {
         let payload = packet.payload();
-        let addr = packet.addr();
         let m = Message::try_from(payload.to_vec());
 
         if let Ok(message) = m {
             match message.header {
-                HeaderByte::Connect => {
-                    // adds player into arena, and adds player into connected remotes.
-                    if let Some(arena) = arena_opt {
-                        let id = arena.add_player(message.read_connect());
-                        Client::send_to(sender, &addr, &Message::write_verify(id)).unwrap();
-                        Client::add_remote(remotes, &addr, max_remotes, id);
-                    }
-                },
-
-                HeaderByte::Verify => {
-                    Client::send_to(sender, &addr, &Message::write_request()).unwrap();
-                },
-
                 HeaderByte::State => {
                     // updates this client's arena.
                 }
@@ -148,19 +134,17 @@ impl Client {
         for event in self.receiver.try_iter() {
             match event {
                 SocketEvent::Packet(packet) => {
-                    Client::on_packet_recv(&self.sender,
-                                           &mut self.arena,
-                                           &mut self.remotes,
-                                           self.max_remotes,
-                                           packet);
+                    if packet.addr() == self.remote.expect("No Remotes") {
+                        Client::on_packet_recv(&mut self.arena, packet);
+                    }
                 },
 
-                SocketEvent::Timeout(addr) => {
-                    Client::remove_remote(&mut self.remotes, &addr);
+                SocketEvent::Timeout(_addr) => {
+                    Client::remove_remote(&mut self.remote);
                 },
 
-                SocketEvent::Disconnect(addr) => {
-                    Client::remove_remote(&mut self.remotes, &addr);
+                SocketEvent::Disconnect(_addr) => {
+                    Client::remove_remote(&mut self.remote);
                 },
 
                 SocketEvent::Connect(_addr) => {

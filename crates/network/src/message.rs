@@ -1,6 +1,7 @@
 use std::io;
 
-use game::{player::Player, input::InputMask};
+use game::{player::Player, input::InputMask, map::{Map, MapBlocksList}, block::BlockType};
+use strum::{IntoEnumIterator, EnumCount};
 use strum_macros::FromRepr;
 
 #[derive(Debug, PartialEq, FromRepr, Clone, Copy)]
@@ -50,9 +51,23 @@ impl Message {
         Player::new(&name)
     }
 
-    pub(crate) fn read_verify(self) -> u8 {
-        let mut bytes = self.data.into_iter();
-        bytes.next().unwrap()
+    pub(crate) fn read_verify(self) -> (u8, Map) {
+        let mut bytes = self.data;
+        let id: u8 = *bytes.get(0).expect("Unable to get id");
+        let mut starter_bit = 1;
+        let mut mapblockslist: MapBlocksList = [0; BlockType::COUNT];
+
+        for blocktype in BlockType::iter() {
+            let bits: [u8; 16] = bytes[starter_bit..starter_bit+16]
+                .try_into()
+                .expect("Unable to obtain map bits.");
+
+            let block_bits = i128::from_le_bytes(bits);
+            mapblockslist[blocktype as usize] = block_bits;
+            starter_bit += 16;
+        }
+
+        (id, Map::new(mapblockslist.into()).unwrap())
     }
 
     pub(crate) fn read_input(&self) -> InputMask {
@@ -72,10 +87,17 @@ impl Message {
         }
     }
 
-    pub(crate) fn write_verify(id: u8) -> Message {
+    pub(crate) fn write_verify(id: u8, map: &Map) -> Message {
+        let mapdata = map.get_mapblocks_list();
+        let mut data_vec = Vec::with_capacity(mapdata.len() + 1);
+        data_vec.push(id);
+        for blocktypelist in mapdata {
+            data_vec.extend(blocktypelist.to_le_bytes());
+        }
+
         Message {
             header: HeaderByte::Verify,
-            data: vec![id],
+            data: data_vec,
         }
     }
 

@@ -31,7 +31,6 @@ pub struct Arena {
     blocks: [Option<BlockType>; VERTICAL_BLOCKS * HORIZONTAL_BLOCKS],
     bulletcount: u16,
     players: HashMap<u8, Player>,
-    id: u8,
 }
 
 impl Default for Arena {
@@ -46,8 +45,11 @@ impl Arena {
         let bullets = HashMap::new();
         let bulletcount = 0;
         let players = HashMap::new();
-        let id = 0;
-        Self { map, blocks, bullets, bulletcount, players, id }
+        Self { map, blocks, bullets, bulletcount, players }
+    }
+
+    pub fn get_map(&self) -> &Map {
+        &self.map
     }
 
     /// returns the top corner x and y coordinates of a block at row and col.
@@ -59,10 +61,8 @@ impl Arena {
 
     /// adds a new player to the arena.
     /// returns the ID of the new player.
-    pub fn add_player(&mut self, player: Player) -> u8 {
-        self.players.insert(self.id, player);
-        self.id += 1;
-        return self.id - 1;
+    pub fn add_player(&mut self, player: Player, id: u8) {
+        self.players.insert(id, player);
     }
 
     pub fn remove_player(&mut self, id: u8) {

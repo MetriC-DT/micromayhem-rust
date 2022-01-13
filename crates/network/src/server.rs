@@ -1,10 +1,9 @@
-use crossbeam_channel::{Sender, Receiver, TrySendError};
+use crossbeam_channel::{Sender, Receiver};
 use game::arena::Arena;
-use laminar::{Socket, ErrorKind, Packet, SocketEvent};
-use std::{net::SocketAddr, thread::{self, JoinHandle}, collections::HashMap, time::Duration};
-
+use laminar::{Socket, Packet, SocketEvent};
+use std::{net::SocketAddr, thread::{self, JoinHandle}, collections::HashMap, io::{self, ErrorKind}};
 use crate::message::{Message, HeaderByte};
-
+use std::io::Result;
 
 /// Wrapper for the client socket. Implementation of orderliness
 /// and "reliability" given by the `laminar` package.
@@ -18,25 +17,41 @@ pub struct Server {
     remotes: HashMap<SocketAddr, u8>,
     max_remotes: u8,
     arena: Arena,
+    next_id: u8,
     _poll_thread: JoinHandle<()>
 }
 
 impl Server {
-    pub fn new(port: u16, max_remotes: u8) -> Result<Self, ErrorKind> {
+    pub fn new(port: u16, max_remotes: u8) -> Result<Self> {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
-        let mut socket = Socket::bind(addr)?;
-        let (sender, receiver) = (socket.get_packet_sender(), socket.get_event_receiver());
-        let remotes = HashMap::new();
-        let _poll_thread = thread::spawn(move || socket.start_polling());
-        let arena = Arena::default();
+        let s = Socket::bind(addr);
+        match s {
+            Ok(mut socket) => {
+                let (sender, receiver) = (socket.get_packet_sender(), socket.get_event_receiver());
+                let remotes = HashMap::new();
+                let _poll_thread = thread::spawn(move || socket.start_polling());
+                let arena = Arena::default();
+                let next_id = 0;
 
-        Ok(Self {sender, receiver, max_remotes, remotes, arena, _poll_thread})
+                Ok(Self {sender, receiver, max_remotes, remotes, arena, next_id, _poll_thread})
+            },
+
+            Err(e) => {Err(io::Error::new(ErrorKind::Other, e))}
+        }
     }
 
     /// connects to a valid address.
-    fn add_remote(remotes: &mut HashMap<SocketAddr, u8>, addr: &SocketAddr, max_remotes: u8, id: u8) {
+    fn add_remote(remotes: &mut HashMap<SocketAddr, u8>,
+                  addr: &SocketAddr,
+                  max_remotes: u8,
+                  next_id: &mut u8) -> bool {
+
         if remotes.len() < max_remotes.into() {
-            remotes.insert(*addr, id);
+            remotes.insert(*addr, *next_id);
+            *next_id += 1;
+            true
+        } else {
+            false
         }
     }
 
@@ -52,7 +67,7 @@ impl Server {
     }
 
     /// sends the data contained in a packet to all connected clients.
-    pub fn send_message(&self, message: &Message) -> Result<(), TrySendError<Packet>> {
+    pub fn send_message(&self, message: &Message) -> Result<()> {
         // sends the data to every one of the remotes.
         for (remote, _) in &self.remotes {
             Server::send_to(&self.sender, remote, &message)?;
@@ -65,9 +80,12 @@ impl Server {
     }
 
     /// sends the data to a remote socket.
-    fn send_to(sender: &Sender<Packet>, remote: &SocketAddr, message: &Message) -> Result<(), TrySendError<Packet>> {
+    fn send_to(sender: &Sender<Packet>, remote: &SocketAddr, message: &Message) -> Result<()> {
         let packet = Packet::reliable_sequenced(*remote, message.to_vec(), None);
-        Ok(sender.try_send(packet)?)
+        match sender.try_send(packet) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(io::Error::new(ErrorKind::Other, e)),
+        }
     }
 
     /// function to call when the client receives a packet.
@@ -75,7 +93,8 @@ impl Server {
                       arena: &mut Arena,
                       remotes: &mut HashMap<SocketAddr, u8>,
                       max_remotes: u8,
-                      packet: Packet) {
+                      packet: Packet,
+                      next_id: &mut u8) {
 
         let payload = packet.payload();
         let addr = packet.addr();
@@ -85,9 +104,14 @@ impl Server {
             match message.header {
                 HeaderByte::Connect => {
                     // adds player into arena, and adds player into connected remotes.
-                    let id = arena.add_player(message.read_connect());
-                    Server::send_to(sender, &addr, &Message::write_verify(id)).unwrap();
-                    Server::add_remote(remotes, &addr, max_remotes, id);
+                    let player = message.read_connect();
+                    let id = *next_id;
+                    let successful = Server::add_remote(remotes, &addr, max_remotes, next_id);
+                    if successful {
+                        arena.add_player(player, id);
+                        let verification = &Message::write_verify(id, arena.get_map());
+                        Server::send_to(sender, &addr, verification).unwrap();
+                    }
                 },
 
                 HeaderByte::Request => {
@@ -97,6 +121,7 @@ impl Server {
                 HeaderByte::Input => {
                     // uses the received input to update the arena.
                     let inputmask = message.read_input();
+                    println!("{}", inputmask);
                 },
 
                 HeaderByte::Disconnect => {
@@ -120,7 +145,8 @@ impl Server {
                                            &mut self.arena,
                                            &mut self.remotes,
                                            self.max_remotes,
-                                           packet);
+                                           packet,
+                                           &mut self.next_id);
                 },
 
                 SocketEvent::Timeout(addr) => {
@@ -131,7 +157,7 @@ impl Server {
                     Server::remove_remote(&mut self.remotes, &addr, &mut self.arena);
                 },
 
-                _ => {},
+                _ => { unimplemented!() },
             }
         }
     }

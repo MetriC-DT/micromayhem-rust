@@ -1,3 +1,5 @@
+use std::fmt;
+
 /// Represents the inputs a person can input to control the player of the arena.
 
 pub enum Input {
@@ -34,6 +36,12 @@ impl InputMask {
 impl Default for InputMask {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl fmt::Display for InputMask {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:b}", self.0)
     }
 }
 

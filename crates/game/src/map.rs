@@ -41,12 +41,12 @@ const COLMASK: i128 = (1 << VERTICAL_BLOCKS) - 1;
 
 /// Type alias to represent all positions occupied by the 8x16
 /// grid of blocks of all types. Used internally.
-pub(crate) type MapBlocksList = [i128; BlockType::COUNT];
+pub type MapBlocksList = [i128; BlockType::COUNT];
 
 
 /// Bits used to construct a map.
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct MapBlocks(MapBlocksList);
+pub struct MapBlocks(MapBlocksList);
 
 impl From<MapBlocksList> for MapBlocks {
     fn from(lst: MapBlocksList) -> Self {
@@ -139,7 +139,7 @@ impl Default for Map {
 
 impl Map {
     /// Constructs a new map
-    pub(crate) fn new(mapblocks: MapBlocks) -> Result<Map, String> {
+    pub fn new(mapblocks: MapBlocks) -> Result<Map, String> {
         let mapblocks = Map::verify_mapblocks(mapblocks)?;
         Ok(Map { mapblocks })
     }
@@ -223,6 +223,10 @@ impl Map {
             }
         }
         blockrects
+    }
+
+    pub fn get_mapblocks_list(&self) -> &MapBlocksList {
+        &self.mapblocks.0
     }
 
     /// returns the index of the first row containing a block

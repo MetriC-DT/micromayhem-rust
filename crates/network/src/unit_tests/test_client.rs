@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, thread::{sleep, self}, time::Duration};
+use std::{thread::{self, sleep}, net::SocketAddr, time::Duration};
 
 use crate::{server::Server, DEFAULT_PORT, client::Client};
 
@@ -11,7 +11,7 @@ fn client_connect() {
         // sends connect request
         c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT-2)), "test").unwrap();
         sleep(Duration::from_millis(50));
-        assert_eq!(c1.get_remotes().len(), 1);
+        assert!(c1.get_remote().is_some());
     });
 
     sleep(Duration::from_millis(50));
@@ -40,6 +40,8 @@ fn client_verification() {
         c1.receive();
         assert!(c1.try_get_id().is_some());
         assert_eq!(c1.try_get_id().unwrap(), 0);
+
+        assert!(c1.try_get_arena().is_some());
     });
 
     sleep(Duration::from_millis(50));
@@ -49,5 +51,12 @@ fn client_verification() {
     sleep(Duration::from_millis(50));
 
     assert_eq!(s1.get_remotes().len(), 1);
+
+    let client_addr = SocketAddr::from(([127,0,0,1], client_port));
+    let connected_client = s1.get_remotes().get(&client_addr);
+    assert!(connected_client.is_some());
+
+    let connected_client_id = connected_client.unwrap();
+    assert_eq!(*connected_client_id, 0);
     t1.join().unwrap();
 }

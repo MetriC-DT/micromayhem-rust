@@ -15,3 +15,5 @@ pub const SPRITE_JSON: &str = "sprites/platforms.json";
 pub const MAPS_DIR: &str = "maps";
 pub const FONTS_DIR: &str = "fonts";
 pub const BACKGROUND_COLOR: u32 = 0x4d6a77;
+
+pub const TICK_RATE: u8 = 60;
