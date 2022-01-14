@@ -29,8 +29,8 @@ pub struct ClientState {
 
 impl ClientState {
     pub fn new(ctx: &mut Context, atlas: &Atlas, server: &SocketAddr, name: &str) -> Result<ClientState> {
-        let mut client = Client::new(0)?;
-        client.connect(server, name)?;
+        let mut client = Client::new(0, name)?;
+        client.connect(server)?;
 
         // keep trying to receive, until timeout.
         let mut tries = 10;

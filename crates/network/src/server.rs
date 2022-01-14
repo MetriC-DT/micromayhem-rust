@@ -46,15 +46,18 @@ impl Server {
     fn add_remote(remotes: &mut HashMap<SocketAddr, u8>,
                   addr: &SocketAddr,
                   max_remotes: u8,
-                  next_id: &mut u8) -> bool {
+                  id: u8) -> bool {
 
-        if remotes.len() < max_remotes.into() {
-            remotes.insert(*addr, *next_id);
-            *next_id += 1;
+        if Server::can_add_new_client(remotes, max_remotes) {
+            remotes.insert(*addr, id);
             true
         } else {
             false
         }
+    }
+
+    fn can_add_new_client(remotes: &mut HashMap<SocketAddr, u8>, max_remotes: u8) -> bool {
+        remotes.len() < max_remotes.into()
     }
 
     /// removes the given socket from the remotes list and the arena.
@@ -85,7 +88,7 @@ impl Server {
     /// sends the data to a remote socket.
     fn send_to(sender: &Sender<Packet>, remote: &SocketAddr, message: &Message) -> Result<()> {
         let packet = Packet::reliable_unordered(*remote, message.to_vec());
-        match sender.send_timeout(packet, Duration::from_millis(50)) {
+        match sender.try_send(packet) {
             Ok(_) => Ok(()),
             Err(e) => Err(io::Error::new(ErrorKind::Other, e)),
         }
@@ -107,19 +110,30 @@ impl Server {
         if let Ok(message) = m {
             match message.header {
                 HeaderByte::Connect => {
-                    // adds player into arena, and adds player into connected remotes.
-                    let player = message.read_connect();
-                    let id = *next_id;
-                    let successful = Server::add_remote(remotes, &addr, max_remotes, next_id);
-                    if successful {
-                        arena.add_player(player, id);
-                        let verification = &Message::write_verify(id, arena.get_map());
-                        Server::send_to(sender, &addr, verification).unwrap();
+                    // acknowledges the player, sends them verification, containing map and ID.
+
+                    // finds the next available free number
+                    let mut id = *next_id;
+                    while arena.get_players().contains_key(&id) {
+                        id = id.wrapping_add(1);
                     }
+
+                    let verification = Message::write_verify(id, arena.get_map());
+                    Server::send_to(sender, &addr, &verification).unwrap();
+
+                    // the next id gets updated.
+                    *next_id = next_id.wrapping_add(1);
                 },
 
                 HeaderByte::Request => {
                     // sends the compressed arena state.
+                    let (id, player) = message.read_request();
+                    if let Some(id) = id {
+                        let successful = Server::add_remote(remotes, &addr, max_remotes, id);
+                        if successful {
+                            arena.add_player(player, id);
+                        }
+                    }
                 },
 
                 HeaderByte::Input => {

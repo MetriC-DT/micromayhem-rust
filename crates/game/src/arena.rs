@@ -198,7 +198,7 @@ impl Arena {
         let jump_input = input.has_mask(Input::Up);
         let shoot_input = input.has_mask(Input::Shoot);
 
-        // total mass obtains mass of player + weapon.
+        // important positions
         let player_bottom = player.position + Vec2::new(0.0, player.height);
         let left_grid_position = Arena::to_row_col(player_bottom);
         let right_grid_position = Arena::to_row_col(player_bottom + Vec2::new(player.width, 0.0));
@@ -339,6 +339,47 @@ impl Arena {
                 }
             }
         }
+    }
+
+    /// obtains the approximate, compressed position.
+    ///
+    /// The approximation is done with the first i8 determining the location in the grid
+    /// where each unit distance of the grid represents an arena block's space and is
+    /// represented as the first two `i8`. The last two `u8` represents the subgrid location.
+    pub fn get_approximate_position(position: Vec2) -> (i8, i8, u8, u8) {
+        let grid_unit_x = BLOCK_WIDTH;
+        let grid_unit_y = VERTICAL_BLOCK_SPACING;
+
+        let [x, y] = position.to_array();
+        let grid_x_f = (x / grid_unit_x).floor();
+        let grid_y_f = (y / grid_unit_y).floor();
+        let grid_x: i8 = grid_x_f as i8;
+        let grid_y: i8 = grid_y_f as i8;
+
+        let x_remain = x - grid_x_f * grid_unit_x;
+        let y_remain = y - grid_y_f * grid_unit_y;
+
+        let sub_unit_x = grid_unit_x / u8::MAX as f32;
+        let sub_unit_y = grid_unit_y / u8::MAX as f32;
+
+        let sub_x = (x_remain / sub_unit_x).floor() as u8;
+        let sub_y = (y_remain / sub_unit_y).floor() as u8;
+
+        (grid_x, grid_y, sub_x, sub_y)
+    }
+
+    /// converts the approximation to an actual Vec2 position.
+    pub fn approx_to_position(grid_x: i8, grid_y: i8, sub_x: u8, sub_y: u8) -> Vec2 {
+        let grid_unit_x = BLOCK_WIDTH;
+        let grid_unit_y = VERTICAL_BLOCK_SPACING;
+
+        let mut x = grid_unit_x * grid_x as f32;
+        let mut y = grid_unit_y * grid_y as f32;
+
+        x += sub_x as f32 * grid_unit_x / u8::MAX as f32;
+        y += sub_y as f32 * grid_unit_y / u8::MAX as f32;
+
+        Vec2::new(x, y)
     }
 }
 

@@ -1,6 +1,6 @@
 use std::{time::SystemTime, collections::HashMap};
 
-use crate::{weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, JUMP_ACCEL, JUMP_COOLDOWN, weapon::{Weapon, WeaponStatus, Bullet}, GRAVITY_DEFAULT};
+use crate::{weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, JUMP_ACCEL, JUMP_COOLDOWN, weapon::{Weapon, WeaponStatus, Bullet}, GRAVITY_DEFAULT, BLOCK_WIDTH, VERTICAL_BLOCK_SPACING};
 use glam::Vec2;
 
 /// Since the display grid has increasing y for going lower on screen,
@@ -53,11 +53,6 @@ impl Player {
     ///
     /// `drop_input` detects whether a valid drop input command was pushed (e.g. only when on block).
     pub fn update(&mut self, dt: f32, max_y: f32, drop_input: bool, direction: f32) {
-        // sets the player's direction based on input left or right. if no input, then just keep
-        // current direction facing.
-        if direction != 0.0 {
-            self.direction = direction;
-        }
 
         // dx = vt + 1/2 at^2
         let mut new_position = self.position + self.velocity * dt + 0.5 * self.acceleration * dt * dt;
@@ -76,15 +71,26 @@ impl Player {
         new_position.y = f32::min(max_y - self.height, new_position.y) + drop_height;
 
         self.velocity = (new_position - self.position) / dt;
+
+        self.update_position(new_position, direction);
+
+        // resets the acceleration component for next function call to add forces.
+        self.acceleration = Vec2::ZERO;
+    }
+
+    pub fn update_position(&mut self, new_position: Vec2, direction: f32) {
+        // sets the player's direction based on input left or right. if no input, then just keep
+        // current direction facing.
+        if direction != 0.0 {
+            self.direction = direction;
+        }
         self.position = new_position;
 
         // updates the gun that the player is holding.
         self.current_weapon.set_position(self.position);
         self.current_weapon.set_direction(self.direction);
-
-        // resets the acceleration component for next function call to add forces.
-        self.acceleration = Vec2::ZERO;
     }
+
 
     /// adds a force to the player. Returns a mutable reference to self, so
     /// more forces can be added with subsequent function calls.

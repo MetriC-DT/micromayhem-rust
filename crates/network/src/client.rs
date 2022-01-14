@@ -2,7 +2,7 @@ use crossbeam::channel::{Sender, Receiver};
 
 use game::{arena::Arena, player::Player};
 use laminar::{Socket, Packet, SocketEvent};
-use std::{net::SocketAddr, thread::{self, JoinHandle}, io::{self, Result, ErrorKind}, time::Duration};
+use std::{net::SocketAddr, thread::{self, JoinHandle}, io::{self, Result, ErrorKind}};
 
 use crate::message::{Message, HeaderByte};
 
@@ -19,11 +19,12 @@ pub struct Client {
     remote: Option<SocketAddr>,
     arena: Option<Arena>,
     id: Option<u8>,
+    name: String,
     _poll_thread: JoinHandle<()>,
 }
 
 impl Client {
-    pub fn new(port: u16) -> Result<Self> {
+    pub fn new(port: u16, name: &str) -> Result<Self> {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
         match Socket::bind(addr) {
             Ok(mut socket) => {
@@ -32,8 +33,9 @@ impl Client {
                 let _poll_thread = thread::spawn(move || socket.start_polling());
                 let arena = None;
                 let id = None;
+                let name = name.to_string();
 
-                Ok(Self {sender, receiver, remote, arena, id, _poll_thread})
+                Ok(Self {sender, receiver, remote, arena, id, name, _poll_thread})
             },
 
             Err(e) => Err(io::Error::new(ErrorKind::Other, e)),
@@ -41,8 +43,8 @@ impl Client {
     }
 
     /// Connects the client to the given `remote` server.
-    pub fn connect(&mut self, remote: &SocketAddr, name: &str) -> Result<()> {
-        let message = Message::write_connect(name);
+    pub fn connect(&mut self, remote: &SocketAddr) -> Result<()> {
+        let message = Message::write_connect();
         Client::send_to(&self.sender, remote, &message)?;
         Ok(())
     }
@@ -90,9 +92,9 @@ impl Client {
                message: &Message) -> Result<()> {
 
         let packet = Packet::reliable_unordered(*remote, message.to_vec());
-        match sender.send_timeout(packet, Duration::from_millis(50)) {
+        match sender.try_send(packet) {
             Ok(_) => {
-                println!("{:?}", message.data);
+                println!("Sending {:?}", message.data);
                 Ok(())
             },
 
@@ -104,6 +106,8 @@ impl Client {
     fn on_packet_recv(arena_opt: &mut Option<Arena>,
                       id_opt: &mut Option<u8>,
                       client_remote: &mut Option<SocketAddr>,
+                      name: &str,
+                      sender: &Sender<Packet>,
                       packet: Packet) {
 
         let payload = packet.payload();
@@ -114,20 +118,22 @@ impl Client {
             match message.header {
                 HeaderByte::State => {
                     // updates this client's arena.
-                }
+                },
 
                 HeaderByte::Verify => {
                     // updates player ID and arena.
-                    Client::set_remote(client_remote, &remote);
                     let (id, map) = message.read_verify();
                     let mut new_arena = Arena::new(map);
+                    new_arena.add_player(Player::new(name), id);
 
-                    // TODO: should not need this because server will
-                    // send its own updated arena with all players.
-                    new_arena.add_player(Player::new("TODO-CHANGED"), id);
                     *id_opt = Some(id);
                     *arena_opt = Some(new_arena);
-                }
+
+                    Client::set_remote(client_remote, &remote);
+
+                    let request = Message::write_request(name, id);
+                    Client::send_to(sender, &remote, &request).unwrap();
+                },
 
                 _ => { unimplemented!() },
             }
@@ -141,7 +147,7 @@ impl Client {
             match event {
                 SocketEvent::Packet(packet) => {
                     if self.remote == None || packet.addr() == self.remote.unwrap() {
-                        Client::on_packet_recv(&mut self.arena, &mut self.id, &mut self.remote, packet);
+                        Client::on_packet_recv(&mut self.arena, &mut self.id, &mut self.remote, self.name.as_str(), &self.sender, packet);
                     }
                 },
 
