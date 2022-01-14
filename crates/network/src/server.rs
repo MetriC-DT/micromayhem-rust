@@ -1,5 +1,5 @@
 use crossbeam::channel::{Sender, Receiver};
-use game::{arena::Arena, input::InputMask};
+use game::{arena::Arena, input::InputMask, player::Player};
 use laminar::{Socket, Packet, SocketEvent};
 use std::{net::SocketAddr, thread::{self, JoinHandle}, collections::HashMap, io::{self, ErrorKind}, time::Duration};
 use crate::message::{Message, HeaderByte};
@@ -169,10 +169,10 @@ impl Server {
     }
 
     /// updates the server arena.
-    pub fn update(&mut self, dt: f32) {
+    pub fn tick(&mut self, dt: f32) {
         self.inputs.clear();
         self.receive();
-        let player_inputs_iter = self.inputs.iter();
-        self.arena.update(dt, player_inputs_iter);
+
+        self.arena.update(dt, &self.inputs);
     }
 }

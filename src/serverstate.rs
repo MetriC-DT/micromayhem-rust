@@ -16,7 +16,7 @@ impl ServerState {
     pub fn run(&mut self) {
         loop {
             let start_time = Instant::now();
-            self.server.update(DELTA_T);
+            self.server.tick(DELTA_T);
             let time_elapsed = start_time.elapsed();
             let diff_from_target = Duration::from_secs_f32(DELTA_T) - time_elapsed;
 

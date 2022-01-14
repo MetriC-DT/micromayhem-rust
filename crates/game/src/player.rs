@@ -1,6 +1,6 @@
-use std::time::SystemTime;
+use std::{time::SystemTime, collections::HashMap};
 
-use crate::{weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, JUMP_ACCEL, JUMP_COOLDOWN, weapon::{Weapon, WeaponStatus, Bullet}};
+use crate::{weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, JUMP_ACCEL, JUMP_COOLDOWN, weapon::{Weapon, WeaponStatus, Bullet}, GRAVITY_DEFAULT};
 use glam::Vec2;
 
 /// Since the display grid has increasing y for going lower on screen,
@@ -52,16 +52,12 @@ impl Player {
     /// expensive to compute.
     ///
     /// `drop_input` detects whether a valid drop input command was pushed (e.g. only when on block).
-    pub fn update(&mut self, dt: f32, max_y: f32, force: Vec2, drop_input: bool, direction: f32) {
-
+    pub fn update(&mut self, dt: f32, max_y: f32, drop_input: bool, direction: f32) {
         // sets the player's direction based on input left or right. if no input, then just keep
         // current direction facing.
         if direction != 0.0 {
             self.direction = direction;
         }
-
-        // acceleration is force divided by (mass of player + weapon)
-        self.acceleration = force / self.get_total_mass();
 
         // dx = vt + 1/2 at^2
         let mut new_position = self.position + self.velocity * dt + 0.5 * self.acceleration * dt * dt;
@@ -85,20 +81,33 @@ impl Player {
         // updates the gun that the player is holding.
         self.current_weapon.set_position(self.position);
         self.current_weapon.set_direction(self.direction);
+
+        // resets the acceleration component for next function call to add forces.
+        self.acceleration = Vec2::ZERO;
     }
 
-    /// obtains the total mass of the player (player + current weapon).
-    pub(crate) fn get_total_mass(&self) -> f32 {
-        self.mass + self.current_weapon.get_mass()
+    /// adds a force to the player. Returns a mutable reference to self, so
+    /// more forces can be added with subsequent function calls.
+    pub(crate) fn add_force(&mut self, force: Vec2) -> &mut Player {
+        self.acceleration += force / self.get_total_mass();
+        self
     }
 
-    /// let jump_force be a function of the number of jumps left, so
-    /// subsequent midair jumps are weaker compared to a ground jump.
-    ///
-    /// if jump was unsuccessful (cooldown active, or no more jumps left),
-    /// then return the zero vector for the jump force. Automatically docks
-    /// one from the `jumps_left` variable if possible.
-    pub(crate) fn jump_force_and_decrement(&mut self) -> Vec2 {
+    pub(crate) fn add_jump_force(&mut self, standing_on_block: bool, jump_input: bool) -> &mut Player {
+        // removes a jump if not standing on block, if possible.
+        if !standing_on_block {
+            self.jumps_left = u8::min(self.jumps_count - 1, self.jumps_left);
+        } else {
+            self.jumps_left = self.jumps_count;
+        }
+
+        // let jump_force be a function of the number of jumps left, so
+        // subsequent midair jumps are weaker compared to a ground jump.
+        //
+        // if jump was unsuccessful (cooldown active, or no more jumps left),
+        // then return the zero vector for the jump force. Automatically docks
+        // one from the `jumps_left` variable if possible.
+        // adds the jump force if input is pressed.
         let curr_time = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .expect("Unable to get current time!")
@@ -107,7 +116,7 @@ impl Player {
         let still_has_jumps = self.jumps_left > 0;
         let time_since_last_jump = curr_time - self.last_jump_time;
 
-        if still_has_jumps && time_since_last_jump > JUMP_COOLDOWN {
+        if jump_input && still_has_jumps && time_since_last_jump > JUMP_COOLDOWN {
             // TODO: figure out a good function to use so double jumping results in the 
             // same final position regardless of when the player inputted the 2nd jump input.
             // let fraction: f32 = self.jumps_left as f32 / self.jumps_count as f32;
@@ -115,11 +124,68 @@ impl Player {
             self.jumps_left -= 1;
 
             let multiplier: f32 = 1.0;
-            return multiplier * self.mass * JUMP_ACCEL;
+            self.add_force(multiplier * self.mass * JUMP_ACCEL)
         } else {
-            return Vec2::ZERO;
+            // don't do anything if unable to jump or no jump inputted.
+            self
         }
     }
+
+    /// calculates and adds the recoil force to the player.
+    pub(crate) fn add_recoil_force(&mut self,
+                                   has_shoot_input: bool,
+                                   dt: f32,
+                                   next_id: &mut u16,
+                                   bullets: &mut HashMap<u16, Bullet>) -> &mut Player {
+
+        if has_shoot_input {
+            match self.attack() {
+                WeaponStatus::FireSuccess => {
+                    // on successful fire, add the newly created bullet to be
+                    // managed by the arena.
+                    let bullet = self.create_new_bullet(*next_id);
+                    bullets.insert(*next_id, bullet);
+                    *next_id += 1;
+
+                    // also calculates the recoil from firing the bullet and adds
+                    // it to the total force.
+                    self.add_force(-self.get_bullet_momentum() / dt)
+                },
+
+                WeaponStatus::Empty => {
+                    // TODO: automatically discards weapon and calculates the recoil
+                    self.add_force(Vec2::ZERO)
+                },
+
+                _ => self
+            }
+        } else {
+            self
+        }
+    }
+
+    /// adds the weight of the player.
+    pub(crate) fn add_weight_force(&mut self) -> &mut Player {
+        self.add_force(GRAVITY_DEFAULT * self.get_total_mass())
+    }
+
+    pub(crate) fn add_normal_force(&mut self, standing_on_block: bool) -> &mut Player {
+        self.add_force(self.get_normal(standing_on_block))
+    }
+
+    pub(crate) fn get_weight(&self) -> Vec2 {
+        GRAVITY_DEFAULT * self.get_total_mass()
+    }
+
+    pub(crate) fn get_normal(&self, standing_on_block: bool) -> Vec2 {
+        -self.get_weight() * standing_on_block as u8 as f32
+    }
+
+    /// obtains the total mass of the player (player + current weapon).
+    pub(crate) fn get_total_mass(&self) -> f32 {
+        self.mass + self.current_weapon.get_mass()
+    }
+
 
     /// attacks with the current weapon.
     pub(crate) fn attack(&mut self) -> WeaponStatus {

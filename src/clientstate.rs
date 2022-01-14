@@ -114,7 +114,7 @@ impl EventHandler for ClientState {
 
         ClientState::draw_player(ctx, player, offset, Color::WHITE)?;
 
-        for (_, p) in arena.get_players_iter() {
+        for (_, p) in arena.get_players().iter() {
             ClientState::draw_player(ctx, p, offset, Color::GREEN)?;
         }
 

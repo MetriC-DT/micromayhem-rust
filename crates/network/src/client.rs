@@ -124,7 +124,7 @@ impl Client {
 
                     // TODO: should not need this because server will
                     // send its own updated arena with all players.
-                    new_arena.add_player(Player::new("BILL"), id);
+                    new_arena.add_player(Player::new("TODO-CHANGED"), id);
                     *id_opt = Some(id);
                     *arena_opt = Some(new_arena);
                 }
