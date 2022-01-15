@@ -1,6 +1,6 @@
 use crossbeam::channel::{Sender, Receiver};
 
-use game::{arena::Arena, player::Player};
+use game::{arena::Arena, player::Player, map::Map};
 use laminar::{Socket, Packet, SocketEvent};
 use std::{net::SocketAddr, thread::{self, JoinHandle}, io::{self, Result, ErrorKind}};
 
@@ -122,20 +122,25 @@ impl Client {
 
                 HeaderByte::Verify => {
                     // updates player ID and arena.
-                    let (id, map) = message.read_verify();
-                    let mut new_arena = Arena::new(map);
-                    new_arena.add_player(Player::new(name), id);
+                    let batch: Result<(u8, Map)> = message.read_verify();
+                    if let Ok((id, map)) = batch {
+                        let mut new_arena = Arena::new(map);
+                        new_arena.add_player(Player::new(name), id);
 
-                    *id_opt = Some(id);
-                    *arena_opt = Some(new_arena);
+                        *id_opt = Some(id);
+                        *arena_opt = Some(new_arena);
 
-                    Client::set_remote(client_remote, &remote);
+                        Client::set_remote(client_remote, &remote);
 
-                    let request = Message::write_request(name, id);
-                    Client::send_to(sender, &remote, &request).unwrap();
+                        let request = Message::write_request(name, id);
+                        Client::send_to(sender, &remote, &request).unwrap();
+                    }
+                    else {
+                        println!("Invalid Verify request received");
+                    }
                 },
 
-                _ => { unimplemented!() },
+                _ => { println!("Invalid header byte received") },
             }
         }
     }

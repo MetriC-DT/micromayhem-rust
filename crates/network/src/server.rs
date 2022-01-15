@@ -1,7 +1,7 @@
 use crossbeam::channel::{Sender, Receiver};
-use game::{arena::Arena, input::InputMask, player::Player};
+use game::{arena::Arena, input::InputMask};
 use laminar::{Socket, Packet, SocketEvent};
-use std::{net::SocketAddr, thread::{self, JoinHandle}, collections::HashMap, io::{self, ErrorKind}, time::Duration};
+use std::{net::SocketAddr, thread::{self, JoinHandle}, collections::HashMap, io::{self, ErrorKind}};
 use crate::message::{Message, HeaderByte};
 use std::io::Result;
 

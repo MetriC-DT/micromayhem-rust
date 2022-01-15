@@ -7,9 +7,9 @@ fn client_connect() {
     let mut s1 = Server::new(DEFAULT_PORT - 2, 4).unwrap();
 
     let t = thread::spawn(|| {
-        let mut c1 = Client::new(DEFAULT_PORT + 2).unwrap();
+        let mut c1 = Client::new(DEFAULT_PORT + 2, "test").unwrap();
         // sends connect request
-        c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT-2)), "test").unwrap();
+        c1.connect(&SocketAddr::from(([0,0,0,0], DEFAULT_PORT-2))).unwrap();
         sleep(Duration::from_millis(50));
         c1.receive();
         sleep(Duration::from_millis(50));
@@ -20,6 +20,10 @@ fn client_connect() {
     sleep(Duration::from_millis(50));
 
     // receives connect request and sends back verification.
+    s1.receive();
+    sleep(Duration::from_millis(50));
+    s1.receive();
+    sleep(Duration::from_millis(50));
     s1.receive();
     sleep(Duration::from_millis(50));
 
@@ -35,9 +39,9 @@ fn client_verification() {
     let mut s1 = Server::new(server_port, 2).unwrap();
 
     let t1 = thread::spawn(move || {
-        let mut c1 = Client::new(client_port).unwrap();
+        let mut c1 = Client::new(client_port, "test").unwrap();
         // sends connect request
-        c1.connect(&SocketAddr::from(([0,0,0,0], server_port)), "test").unwrap();
+        c1.connect(&SocketAddr::from(([0,0,0,0], server_port))).unwrap();
         sleep(Duration::from_millis(50));
         c1.receive();
         sleep(Duration::from_millis(50));
@@ -51,6 +55,12 @@ fn client_verification() {
     sleep(Duration::from_millis(50));
 
     // receives connect request and sends back verification.
+    //
+    // TODO - should probably test this with a timeout in a separate thread.
+    s1.receive();
+    sleep(Duration::from_millis(50));
+    s1.receive();
+    sleep(Duration::from_millis(50));
     s1.receive();
     sleep(Duration::from_millis(50));
 

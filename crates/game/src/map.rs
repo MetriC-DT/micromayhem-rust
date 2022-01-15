@@ -139,7 +139,7 @@ impl Default for Map {
 
 impl Map {
     /// Constructs a new map
-    pub fn new(mapblocks: MapBlocks) -> Result<Map, String> {
+    pub fn new(mapblocks: MapBlocks) -> Result<Map, &'static str> {
         let mapblocks = Map::verify_mapblocks(mapblocks)?;
         Ok(Map { mapblocks })
     }
