@@ -121,12 +121,12 @@ impl Weapon {
             self.last_attack_time = currtime;
             self.bullets -= 1;
             self.status = Cooldown;
-            return WeaponStatus::FireSuccess;
+            WeaponStatus::FireSuccess
         } else if can_attack {
             self.status = Empty;
-            return WeaponStatus::Empty;
+            WeaponStatus::Empty
         } else {
-            return WeaponStatus::Cooldown;
+            WeaponStatus::Cooldown
         }
     }
 

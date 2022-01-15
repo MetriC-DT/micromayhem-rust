@@ -75,8 +75,8 @@ impl Server {
     /// sends the data contained in a packet to all connected clients.
     pub fn send_message(&self, message: &Message) -> Result<()> {
         // sends the data to every one of the remotes.
-        for (remote, _) in &self.remotes {
-            Server::send_to(&self.sender, remote, &message)?;
+        for remote in self.remotes.keys() {
+            Server::send_to(&self.sender, remote, message)?;
         }
         Ok(())
     }
@@ -127,8 +127,8 @@ impl Server {
 
                 HeaderByte::Request => {
                     // sends the compressed arena state.
-                    let (id, player) = message.read_request();
-                    if let Some(id) = id {
+                    let request_data  = message.read_request();
+                    if let Ok((id, player)) = request_data {
                         let successful = Server::add_remote(remotes, &addr, max_remotes, id);
                         if successful {
                             arena.add_player(player, id);

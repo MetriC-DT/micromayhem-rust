@@ -40,10 +40,10 @@ impl ClientState {
             thread::sleep(Duration::from_secs_f32(0.5));
         }
 
-        let arena = client.try_get_arena().expect("Unable to get arena");
-        let mapmesh = ClientState::build_mapmesh(&arena, ctx, atlas).unwrap();
+        let arena = client.try_get_arena().expect("Failed to connect to server");
+        let mapmesh = ClientState::build_mapmesh(arena, ctx, atlas).unwrap();
         let inputmask = InputMask::new();
-        return Ok(ClientState {client, mapmesh, inputmask});
+        Ok(ClientState {client, mapmesh, inputmask})
     }
 
     /// TODO: Use player sprite rather than just a rectangle.

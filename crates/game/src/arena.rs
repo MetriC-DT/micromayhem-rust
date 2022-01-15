@@ -58,7 +58,6 @@ impl Arena {
     }
 
     /// adds a new player to the arena.
-    /// returns the ID of the new player.
     pub fn add_player(&mut self, player: Player, id: u8) {
         self.players.insert(id, player);
     }
@@ -155,7 +154,7 @@ impl Arena {
 
         for (id, player) in self.players.iter_mut() {
             let default_input = InputMask::new();
-            let input = inputs.get(&id).unwrap_or_else(|| &default_input);
+            let input = inputs.get(id).unwrap_or(&default_input);
             Arena::update_player(player, *input, dt, &mut self.bulletcount, &mut self.bullets, &self.map, &self.blocks);
         }
 
@@ -172,7 +171,7 @@ impl Arena {
 
             let position_x = bullet.get_position().x;
             // removes bullet when flies off the arena.
-            if position_x < 0.0 || position_x > ARENA_WIDTH {
+            if !(0.0..=ARENA_WIDTH).contains(&position_x) {
                 to_remove.push(*id as u16);
             }
         }

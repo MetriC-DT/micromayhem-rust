@@ -51,7 +51,7 @@ impl Client {
 
     /// connects to a valid address, if we are allowed to.
     fn set_remote(remote: &mut Option<SocketAddr>, addr: &SocketAddr) -> bool {
-        if let None = remote {
+        if remote.is_none() {
             *remote = Some(*addr);
             true
         } else {
@@ -71,7 +71,7 @@ impl Client {
     /// sends the data contained in a packet to a server.
     pub fn send_message(&self, message: &Message) -> Result<()> {
         if let Some(remote) = self.remote {
-            Client::send_to(&self.sender, &remote, &message)?;
+            Client::send_to(&self.sender, &remote, message)?;
             Ok(())
         } else {
             Err(io::Error::new(ErrorKind::NotFound, "Remote not initialized"))

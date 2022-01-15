@@ -1,7 +1,16 @@
 use std::{time::SystemTime, collections::HashMap};
 
-use crate::{weaponscatalog::WeaponType, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_MASS, PLAYER_SPEED_CAP, ARENA_WIDTH, JUMP_ACCEL, JUMP_COOLDOWN, weapon::{Weapon, WeaponStatus, Bullet}, GRAVITY_DEFAULT, BLOCK_WIDTH, VERTICAL_BLOCK_SPACING};
+use crate::weapon::{Weapon, WeaponStatus, Bullet};
+use crate::weaponscatalog::WeaponType;
 use glam::Vec2;
+use crate::GRAVITY_DEFAULT;
+use crate::JUMP_COOLDOWN;
+use crate::JUMP_ACCEL;
+use crate::ARENA_WIDTH;
+use crate::PLAYER_SPEED_CAP;
+use crate::PLAYER_MASS;
+use crate::PLAYER_HEIGHT;
+use crate::PLAYER_WIDTH;
 
 /// Since the display grid has increasing y for going lower on screen,
 /// the convention will be downward y direction is positive.

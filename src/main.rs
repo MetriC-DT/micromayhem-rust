@@ -15,7 +15,7 @@ fn main() -> GameResult {
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 && &args[1] == "server" {
         run_server();
-        return Ok(())
+        Ok(())
     } else {
         run_client()
     }

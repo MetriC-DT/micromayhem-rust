@@ -1,4 +1,4 @@
-use std::{io::{self, Error}, array::TryFromSliceError};
+use std::io::{self, Error};
 
 use game::{player::Player, input::InputMask, map::{Map, MapBlocksList}, block::BlockType, arena::Arena};
 use strum::{IntoEnumIterator, EnumCount};
@@ -72,7 +72,7 @@ impl Message {
     pub fn write_verify(id: u8, map: &Map) -> Message {
         let mapdata = map.get_mapblocks_list();
         let mut data_vec = Vec::with_capacity(mapdata.len() + 1);
-        data_vec.extend_from_slice(&id.to_le_bytes());
+        data_vec.extend(id.to_le_bytes());
         for blocktypelist in mapdata {
             data_vec.extend(blocktypelist.to_le_bytes());
         }
@@ -106,10 +106,10 @@ impl Message {
         for (id, player) in arena.get_players() {
             state_bytes.push(*id);
             let (x, y, x_s, y_s) = Arena::get_approximate_position(player.position);
-            state_bytes.extend_from_slice(&x.to_le_bytes());
-            state_bytes.extend_from_slice(&y.to_le_bytes());
-            state_bytes.extend_from_slice(&x_s.to_le_bytes());
-            state_bytes.extend_from_slice(&y_s.to_le_bytes());
+            state_bytes.extend(x.to_le_bytes());
+            state_bytes.extend(y.to_le_bytes());
+            state_bytes.extend(x_s.to_le_bytes());
+            state_bytes.extend(y_s.to_le_bytes());
         }
 
         Message {
@@ -126,21 +126,23 @@ impl Message {
     /// Reads the packet as a request packet.
     ///
     /// TODO - returns an Err result if unable to do so.
-    pub fn read_request(self) -> (Option<u8>, Player) {
-        let mut data_iter = self.data.into_iter();
-        let id = data_iter.next();
-        let namebytes: Vec<u8> = data_iter.collect();
+    pub fn read_request(&self) -> Result<(u8, Player)> {
+        let mut data_iter = self.data.iter();
+        let mut id = *data_iter.next()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Unable to read ID"))?;
+
+        id = u8::from_le(id);
+        let namebytes: Vec<u8> = data_iter.cloned().collect();
         let name = String::from_utf8_lossy(&namebytes);
-        (id, Player::new(&name))
+        Ok((id, Player::new(&name)))
     }
 
     /// Reads the packet as a verify packet.
-    ///
-    /// TODO - returns an Err result if unable to do so.
     pub fn read_verify(&self) -> Result<(u8, Map)> {
         let bytes = &self.data;
         let mut id: u8 = *bytes.get(0)
             .ok_or_else(|| Error::new(io::ErrorKind::InvalidData, "Unable to read ID"))?;
+
         id = u8::from_le(id);
         let mut starter_bit = 1;
         let mut mapblockslist: MapBlocksList = [0; BlockType::COUNT];
@@ -165,7 +167,7 @@ impl Message {
     ///
     /// TODO - returns an err result if unable to do so.
     pub fn read_input(&self) -> InputMask {
-        let mask = self.data.iter().next();
+        let mask = self.data.get(0);
         if let Some(mask) = mask {
             let maskdata = u8::from_le(*mask);
             InputMask::from(maskdata)
