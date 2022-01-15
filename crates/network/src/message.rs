@@ -124,8 +124,6 @@ impl Message {
     }
 
     /// Reads the packet as a request packet.
-    ///
-    /// TODO - returns an Err result if unable to do so.
     pub fn read_request(&self) -> Result<(u8, Player)> {
         let mut data_iter = self.data.iter();
         let mut id = *data_iter.next()
