@@ -57,21 +57,30 @@ impl Arena {
         Vec2::new(x, y)
     }
 
-    /// adds a new player to the arena.
-    pub fn add_player(&mut self, player: Player, id: u8) {
+    /// adds a new player to the arena. Returns the added player.
+    pub fn add_player(&mut self, player: Player, id: u8) -> &mut Player {
         self.players.insert(id, player);
+        self.players.get_mut(&id).expect("Player not found. This should not happen.")
     }
 
     pub fn remove_player(&mut self, id: u8) {
         self.players.remove(&id);
     }
 
-    pub fn get_player(&self, id: u8) -> &Player {
-        self.players.get(&id).expect("No player with given id")
+    pub fn get_player(&self, id: u8) -> Option<&Player> {
+        self.players.get(&id)
+    }
+
+    pub fn get_mut_player(&mut self, id: u8) -> Option<&mut Player> {
+        self.players.get_mut(&id)
     }
 
     pub fn get_players(&self) -> &HashMap<u8, Player> {
         &self.players
+    }
+
+    pub fn get_bullets(&self) -> &HashMap<u16, Bullet> {
+        &self.bullets
     }
 
     /// obtains the position of the row as f32.
@@ -98,11 +107,7 @@ impl Arena {
                 let w: f32 = BLOCK_WIDTH;
                 let h: f32 = BLOCK_HEIGHT;
 
-                if let Some(blocktype) = *blocktypeoption {
-                    Some(BlockRect {x, y, w, h, blocktype})
-                } else {
-                    None
-                }
+                (*blocktypeoption).map(|blocktype| BlockRect {x, y, w, h, blocktype})
             })
     }
 

@@ -118,6 +118,24 @@ impl Client {
             match message.header {
                 HeaderByte::State => {
                     // updates this client's arena.
+                    let state = message.read_state();
+                    if let (Some(arena), Ok((p_ids, p_positions, b_ids, b_type, b_positions))) = (arena_opt, state) {
+                        // updates players and positions.
+                        for (id, pos) in p_ids.iter().zip(p_positions) {
+                            let p = arena.get_mut_player(*id);
+                            if let Some(player) = p {
+                                // TODO - actually send the direction
+                                player.update_position(pos, 1.0);
+                            }
+                            else {
+                                let player = arena.add_player(Player::new(&id.to_string()), *id);
+                                // TODO - actually send the direction
+                                player.update_position(pos, 1.0);
+                            }
+                        }
+                    } else {
+                        println!("Received invalid state packet");
+                    }
                 },
 
                 HeaderByte::Verify => {
@@ -125,6 +143,8 @@ impl Client {
                     let batch: Result<(u8, Map)> = message.read_verify();
                     if let Ok((id, map)) = batch {
                         let mut new_arena = Arena::new(map);
+
+                        // TODO - should remove.
                         new_arena.add_player(Player::new(name), id);
 
                         *id_opt = Some(id);

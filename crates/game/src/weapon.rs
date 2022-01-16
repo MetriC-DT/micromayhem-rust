@@ -40,8 +40,12 @@ impl Bullet {
         self.position
     }
 
-    pub fn update(& mut self, dt: f32) {
+    pub fn update(&mut self, dt: f32) {
         self.position += self.velocity * dt;
+    }
+
+    pub fn get_bullet_type(&self) -> BulletType {
+        self.bullettype
     }
 }
 
@@ -142,16 +146,16 @@ impl Weapon {
     }
 
     /// sets the position of the weapon the player is holding.
-    pub(crate) fn set_position(&mut self, position: Vec2) {
+    pub fn set_position(&mut self, position: Vec2) {
         self.position = position;
     }
 
     /// sets the direction the weapon is facing.
-    pub(crate) fn set_direction(&mut self, direction: f32) {
+    pub fn set_direction(&mut self, direction: f32) {
         self.direction = direction;
     }
 
-    pub(crate) fn get_bullet_type(&self) -> BulletType {
+    pub fn get_bullet_type(&self) -> BulletType {
         BULLET_TYPES[self.weapontype as usize]
     }
 

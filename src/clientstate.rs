@@ -105,7 +105,7 @@ impl EventHandler for ClientState {
 
         // gets new viewport to find where to position the camera.
         // TODO: obtain the correct player (not just the first one).
-        let player = arena.get_player(id);
+        let player = arena.get_player(id).expect("No player with ID");
         let viewport: Viewport = Viewport::get_viewport_on_player(player, ctx);
         let offset = viewport.get_offset();
 
@@ -114,8 +114,10 @@ impl EventHandler for ClientState {
 
         ClientState::draw_player(ctx, player, offset, Color::WHITE)?;
 
-        for (_, p) in arena.get_players().iter() {
-            ClientState::draw_player(ctx, p, offset, Color::GREEN)?;
+        for (player_id, p) in arena.get_players().iter() {
+            if *player_id != id {
+                ClientState::draw_player(ctx, p, offset, Color::GREEN)?;
+            }
         }
 
         // draws bullets

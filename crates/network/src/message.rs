@@ -1,6 +1,7 @@
+use glam::Vec2;
 use std::io::{self, Error};
 
-use game::{player::Player, input::InputMask, map::{Map, MapBlocksList}, block::BlockType, arena::Arena};
+use game::{player::Player, input::InputMask, map::{Map, MapBlocksList}, block::BlockType, arena::Arena, weaponscatalog::BulletType};
 use strum::{IntoEnumIterator, EnumCount};
 use strum_macros::FromRepr;
 use std::io::Result;
@@ -41,11 +42,13 @@ impl TryFrom<Vec<u8>> for Message {
 impl Message {
     pub fn to_vec(&self) -> Vec<u8> {
         let mut v = Vec::with_capacity(1 + self.data.len());
-        v.push(self.header as u8);
-        v.extend(self.data.clone());
+        let header_byte = self.header as u8;
+        v.extend(header_byte.to_le_bytes());
+        v.extend(&self.data);
         v
     }
 
+    /// A `connect` is formatted as just the connect header.
     pub fn write_connect() -> Message {
         Message {
             header: HeaderByte::Connect,
@@ -97,19 +100,26 @@ impl Message {
     ///
     /// 0 - number of players
     /// 1 - [(player_id_0 - u8, approximation of player position), ... ]
-    /// 2 - [(bullet_id_0 - u16, approximation of bullet position, bullet_type - u8), ... ]
+    /// 2 - [(bullet_id_0 - u16, bullet_type - u8, approximation of bullet position), ... ]
     pub fn write_state(arena: &Arena) -> Message {
         let mut state_bytes = Vec::new();
         let num_players: u8 = arena.get_players().len().try_into().unwrap();
-        state_bytes.push(num_players);
+        state_bytes.extend(num_players.to_le_bytes());
 
         for (id, player) in arena.get_players() {
-            state_bytes.push(*id);
+            state_bytes.extend(id.to_le_bytes());
+
             let (x, y, x_s, y_s) = Arena::get_approximate_position(player.position);
             state_bytes.extend(x.to_le_bytes());
             state_bytes.extend(y.to_le_bytes());
             state_bytes.extend(x_s.to_le_bytes());
             state_bytes.extend(y_s.to_le_bytes());
+        }
+
+        for (id, bullet) in arena.get_bullets() {
+            state_bytes.extend(id.to_le_bytes());
+            let bullettype: u8 = bullet.get_bullet_type() as u8;
+            state_bytes.extend(bullettype.to_le_bytes())
         }
 
         Message {
@@ -119,17 +129,71 @@ impl Message {
     }
 
     /// Reads the packet as a gamestate packet.
-    pub fn read_state<E>(self) -> Result<Arena> {
-        Ok(Arena::default())
+    ///
+    /// returned data:
+    /// (player_ids, player_positions, bullet_ids, bullet_types, bullet_positions)
+    pub fn read_state(&self) -> Result<(Vec<u8>, Vec<Vec2>, Vec<u16>, Vec<BulletType>, Vec<Vec2>)> {
+        let mut data_iter = self.data.iter();
+        let mut player_count = *data_iter.next()
+            .ok_or(io::Error::new(io::ErrorKind::InvalidData, "Unable to read player count"))?;
+
+        player_count = u8::from_le(player_count);
+
+        let mut player_ids = Vec::with_capacity(player_count.into());
+        let mut player_positions = Vec::with_capacity(player_count.into());
+        let mut bullet_ids = Vec::new();
+        let mut bullet_types = Vec::new();
+        let mut bullet_positions = Vec::new();
+
+        for _ in 0..player_count {
+            let id: u8 = u8::from_le(
+                *data_iter.next()
+                .ok_or(io::Error::new(io::ErrorKind::InvalidData, "Unable to read ID"))?
+                );
+
+            player_ids.push(id);
+            player_positions.push(Message::read_next_position(&mut data_iter)?);
+        }
+
+        Ok((player_ids, player_positions, bullet_ids, bullet_types, bullet_positions))
+    }
+
+    /// obtains the position decoded from the bytes of the iterator.
+    fn read_next_position<'a>(data_bytes: &mut impl Iterator<Item = &'a u8>) -> Result<Vec2> {
+        // grabs the next 4 u8 data and gather it as point.
+        let [x, y]: [i8; 2]  = {
+            let mut pts: [i8; 2] = [0; 2];
+            for pt in pts.iter_mut() {
+                *pt = i8::from_le_bytes([
+                    *data_bytes.next()
+                    .ok_or(io::Error::new(io::ErrorKind::InvalidData, "Unable to read location"))?
+                    ]);
+            }
+            pts
+        };
+
+        let [xs, ys]: [u8; 2] = {
+            let mut pts: [u8; 2] = [0; 2];
+            for pt in pts.iter_mut() {
+                *pt = u8::from_le_bytes([
+                    *data_bytes.next()
+                    .ok_or(io::Error::new(io::ErrorKind::InvalidData, "Unable to read location"))?
+                    ]);
+            }
+            pts
+        };
+
+        Ok(Arena::approx_to_position(x, y, xs, ys))
     }
 
     /// Reads the packet as a request packet.
     pub fn read_request(&self) -> Result<(u8, Player)> {
         let mut data_iter = self.data.iter();
-        let mut id = *data_iter.next()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Unable to read ID"))?;
+        let id: u8 = u8::from_le(
+            *data_iter.next()
+            .ok_or(io::Error::new(io::ErrorKind::InvalidData, "Unable to read ID"))?
+            );
 
-        id = u8::from_le(id);
         let namebytes: Vec<u8> = data_iter.cloned().collect();
         let name = String::from_utf8_lossy(&namebytes);
         Ok((id, Player::new(&name)))
@@ -138,10 +202,11 @@ impl Message {
     /// Reads the packet as a verify packet.
     pub fn read_verify(&self) -> Result<(u8, Map)> {
         let bytes = &self.data;
-        let mut id: u8 = *bytes.get(0)
-            .ok_or_else(|| Error::new(io::ErrorKind::InvalidData, "Unable to read ID"))?;
+        let id: u8 = u8::from_le(
+            *bytes.get(0)
+            .ok_or_else(|| Error::new(io::ErrorKind::InvalidData, "Unable to read ID"))?
+            );
 
-        id = u8::from_le(id);
         let mut starter_bit = 1;
         let mut mapblockslist: MapBlocksList = [0; BlockType::COUNT];
 

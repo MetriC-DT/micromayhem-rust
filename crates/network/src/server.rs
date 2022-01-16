@@ -94,6 +94,10 @@ impl Server {
         }
     }
 
+    pub fn get_arena(&self) -> &Arena {
+        &self.arena
+    }
+
     /// function to call when the client receives a packet.
     fn on_packet_recv(sender: &Sender<Packet>,
                       arena: &mut Arena,
