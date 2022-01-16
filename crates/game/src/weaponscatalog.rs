@@ -3,7 +3,7 @@
 /// README: An alternative approach is to have all of the weapon properties in a 
 /// JSON object and just read all that in at run time. Might be more readable than this.
 use strum::EnumCount;
-use strum_macros::EnumCount;
+use strum_macros::{EnumCount, FromRepr};
 use WeaponType::*;
 use BulletType::*;
 
@@ -16,7 +16,7 @@ pub enum WeaponType {
 /// Type of the bullets fired from various weapons.
 /// README: maybe implement bullet "attacks" types so we can have different implementations
 /// (e.g. exploding missile).
-#[derive(Debug, Clone, EnumCount, Copy)]
+#[derive(Debug, Clone, EnumCount, Copy, FromRepr)]
 pub enum BulletType {
     Pistol,
     Rifle,

@@ -147,7 +147,6 @@ impl Server {
 
                     if let Some(id) = id_option {
                         inputs.insert(*id, inputmask);
-                        println!("Received {} from {}", inputmask, *id);
                     }
                 },
 

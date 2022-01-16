@@ -24,6 +24,7 @@ impl Bullet {
     pub fn new(position: Vec2, velocity: Vec2, bullettype: BulletType, team: u8, id: u16) -> Self {
         Self { position, velocity, bullettype, team, id }
     }
+
     pub fn get_mass(&self) -> f32 {
         DEFAULT_BULLET_MASSES[self.bullettype as usize]
     }

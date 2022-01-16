@@ -125,8 +125,8 @@ impl EventHandler for ClientState {
             let [x, y] = bullet.get_position().to_array();
             let w = 9.0;
             let h = 9.0;
-            let b = ggez::graphics::Rect {x, y, w, h};
-            let mesh = Mesh::new_rectangle(ctx, DrawMode::fill(), b, Color::RED)?;
+            let b = ggez::graphics::Rect {x: x - w / 2.0, y: y - w / 2.0, w, h};
+            let mesh = Mesh::new_rectangle(ctx, DrawMode::fill(), b, Color::MAGENTA)?;
             graphics::draw(ctx, &mesh, DrawParam::default().dest(offset))?;
         }
 

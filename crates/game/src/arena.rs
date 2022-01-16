@@ -83,6 +83,14 @@ impl Arena {
         &self.bullets
     }
 
+    pub fn update_bullet(&mut self, bullet: Bullet) {
+        self.bullets.insert(bullet.get_id(), bullet);
+    }
+
+    pub fn clear_bullets(&mut self) {
+        self.bullets.clear();
+    }
+
     /// obtains the position of the row as f32.
     fn get_block_row_position(row: usize) -> f32 {
         VERTICAL_PADDING + VERTICAL_BLOCK_SPACING * row as f32

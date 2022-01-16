@@ -117,9 +117,19 @@ impl Message {
         }
 
         for (id, bullet) in arena.get_bullets() {
+            // id sent
             state_bytes.extend(id.to_le_bytes());
+
+            // bullettype
             let bullettype: u8 = bullet.get_bullet_type() as u8;
-            state_bytes.extend(bullettype.to_le_bytes())
+            state_bytes.extend(bullettype.to_le_bytes());
+
+            // locations
+            let (x, y, x_s, y_s) = Arena::get_approximate_position(bullet.get_position());
+            state_bytes.extend(x.to_le_bytes());
+            state_bytes.extend(y.to_le_bytes());
+            state_bytes.extend(x_s.to_le_bytes());
+            state_bytes.extend(y_s.to_le_bytes());
         }
 
         Message {
@@ -141,9 +151,9 @@ impl Message {
 
         let mut player_ids = Vec::with_capacity(player_count.into());
         let mut player_positions = Vec::with_capacity(player_count.into());
-        let mut bullet_ids = Vec::new();
-        let mut bullet_types = Vec::new();
-        let mut bullet_positions = Vec::new();
+        let mut bullet_ids = Vec::with_capacity(player_count as usize * 3);
+        let mut bullet_types = Vec::with_capacity(player_count as usize * 3);
+        let mut bullet_positions = Vec::with_capacity(player_count as usize * 3);
 
         for _ in 0..player_count {
             let id: u8 = u8::from_le(
@@ -153,6 +163,27 @@ impl Message {
 
             player_ids.push(id);
             player_positions.push(Message::read_next_position(&mut data_iter)?);
+        }
+
+        // total remaining bytes divided by bytes per bullet
+        // 2 for id, 1 for type, 4 for position
+        let num_bullets = data_iter.len() / (2 + 1 + 4);
+        for _ in 0..num_bullets {
+            let byte_1: u8 = *data_iter.next().ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data"))?;
+            let byte_2: u8 = *data_iter.next().ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data"))?;
+            let id: u16 = u16::from_le_bytes([byte_1, byte_2]);
+
+            let type_byte: u8 = u8::from_le(
+                *data_iter.next()
+                .ok_or(io::Error::new(io::ErrorKind::InvalidData, "Cannot determine type"))?);
+            let bullettype: BulletType = BulletType::from_repr(type_byte as usize)
+                .ok_or(io::Error::new(io::ErrorKind::InvalidData, "Cannot determine type"))?;
+
+            let position = Message::read_next_position(&mut data_iter)?;
+
+            bullet_ids.push(id);
+            bullet_types.push(bullettype);
+            bullet_positions.push(position);
         }
 
         Ok((player_ids, player_positions, bullet_ids, bullet_types, bullet_positions))

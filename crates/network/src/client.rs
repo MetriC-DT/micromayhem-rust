@@ -1,6 +1,7 @@
 use crossbeam::channel::{Sender, Receiver};
 
-use game::{arena::Arena, player::Player, map::Map};
+use game::{arena::Arena, player::Player, map::Map, weapon::Bullet};
+use glam::Vec2;
 use laminar::{Socket, Packet, SocketEvent};
 use std::{net::SocketAddr, thread::{self, JoinHandle}, io::{self, Result, ErrorKind}};
 
@@ -93,10 +94,7 @@ impl Client {
 
         let packet = Packet::reliable_unordered(*remote, message.to_vec());
         match sender.try_send(packet) {
-            Ok(_) => {
-                println!("Sending {:?}", message.data);
-                Ok(())
-            },
+            Ok(_) => { Ok(()) },
 
             Err(e) => Err(io::Error::new(ErrorKind::Other, e))
         }
@@ -121,6 +119,7 @@ impl Client {
                     let state = message.read_state();
                     if let (Some(arena), Ok((p_ids, p_positions, b_ids, b_type, b_positions))) = (arena_opt, state) {
                         // updates players and positions.
+                        // TODO - clear only disconnected players
                         for (id, pos) in p_ids.iter().zip(p_positions) {
                             let p = arena.get_mut_player(*id);
                             if let Some(player) = p {
@@ -132,6 +131,13 @@ impl Client {
                                 // TODO - actually send the direction
                                 player.update_position(pos, 1.0);
                             }
+                        }
+
+                        // TODO - clear only dead bullets.
+                        arena.clear_bullets();
+                        for ((id, bullettype), position) in b_ids.iter().zip(b_type).zip(b_positions) {
+                            let bullet = Bullet::new(position, Vec2::ZERO, bullettype, 0, *id);
+                            arena.update_bullet(bullet);
                         }
                     } else {
                         println!("Received invalid state packet");
