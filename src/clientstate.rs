@@ -112,11 +112,12 @@ impl EventHandler for ClientState {
         // draws everything else.
         graphics::draw(ctx, &self.mapmesh, DrawParam::default().dest(offset))?;
 
-        ClientState::draw_player(ctx, player, offset, Color::WHITE)?;
+        // draw self player
+        ClientState::draw_player(ctx, player, offset, Color::GREEN)?;
 
         for (player_id, p) in arena.get_players().iter() {
             if *player_id != id {
-                ClientState::draw_player(ctx, p, offset, Color::GREEN)?;
+                ClientState::draw_player(ctx, p, offset, Color::WHITE)?;
             }
         }
 
